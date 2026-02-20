@@ -1,5 +1,5 @@
 {
   "routes": [
-    { "src": "/", "dest": "/block from top.html" }
+    { "src": "/", "dest": "/index.html" }
   ]
 }
