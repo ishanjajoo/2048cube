@@ -2,91 +2,143 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>2048 Cube 3D Standalone</title>
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #020617; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        #canvas-container { position: absolute; inset: 0; z-index: 0; }
-        .ui { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(2, 6, 23, 0.8) 0%, rgba(2, 6, 23, 0) 100%); }
-        .btn { pointer-events: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 50%; cursor: pointer; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
-        .btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
-        .btn:active { transform: translateY(0); scale: 0.95; }
-        .btn:disabled { opacity: 0.1; cursor: not-allowed; transform: none; box-shadow: none; }
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background-color: #020617; color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        #canvas-container { position: absolute; inset: 0; z-index: 0; touch-action: none; }
+        
+        /* Split UI to Top and Bottom to maximize playing area */
+        .ui { 
+            position: absolute; left: 0; right: 0; pointer-events: none; z-index: 10; 
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .ui-top {
+            top: 0;
+            padding: max(20px, env(safe-area-inset-top)) 40px 20px;
+            background: linear-gradient(to bottom, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0) 100%);
+        }
+        .ui-bottom {
+            bottom: 0;
+            padding: 20px 40px max(20px, env(safe-area-inset-bottom));
+            background: linear-gradient(to top, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0) 100%);
+            align-items: flex-end; justify-content: center;
+        }
+
+        .title-container { display: flex; flex-direction: column; text-align: left; }
+        .title { font-size: 36px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; line-height: 1; }
+        .subtitle { font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; margin-top: 6px; }
+        
+        .score-group { display: flex; gap: 12px; }
         .score-box { background: rgba(15, 23, 42, 0.4); padding: 12px 20px; border-radius: 16px; text-align: center; min-width: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
         .label { font-size: 9px; text-transform: uppercase; opacity: 0.6; letter-spacing: 2px; font-weight: 900; margin-bottom: 2px; color: #94a3b8; }
         .value { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; color: white; }
+
+        .btn-group { display: flex; gap: 20px; pointer-events: auto; }
+        .btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 50%; cursor: pointer; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; }
+        .btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); scale: 0.95; }
+        .btn:disabled { opacity: 0.1; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .flip-icon { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
         .modal { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.9); display: none; align-items: center; justify-content: center; z-index: 50; pointer-events: auto; backdrop-filter: blur(10px); }
-        .title { font-size: 36px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.05); border-top-color: #22d3ee; border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; margin-bottom: 20px; }
+        .modal-content { text-align: center; background: rgba(15, 23, 42, 0.4); padding: 50px 30px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.05); max-width: 85%; width: 400px; }
+        .modal-title { font-size: clamp(40px, 10vw, 80px); line-height: 1; }
+        .modal-desc { margin: 20px 0 35px; opacity: 0.5; font-weight: 600; letter-spacing: 1px; font-size: clamp(12px, 3.5vw, 16px); }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .ui-top { flex-direction: column; align-items: center; gap: 15px; padding: max(15px, env(safe-area-inset-top)) 15px 15px; text-align: center; }
+            .title-container { text-align: center; }
+            .title { font-size: 28px; }
+            .score-box { min-width: 70px; padding: 10px 15px; }
+            .value { font-size: 20px; }
+            .ui-bottom { padding: 15px 15px max(15px, env(safe-area-inset-bottom)); }
+            .btn { width: 46px; height: 46px; }
+        }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
-    <div class="ui">
-        <div style="display: flex; flex-direction: column; gap: 5px;">
+    
+    <!-- Top UI Container -->
+    <div class="ui ui-top">
+        <div class="title-container">
             <div class="title">CUBE 2048</div>
-            <div style="font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap;">SYNTHESIZE IDENTICAL NEIGHBORS</div>
+            <div class="subtitle">SYNTHESIZE IDENTICAL NEIGHBORS</div>
         </div>
-
-        <div style="display: flex; gap: 12px; pointer-events: auto; align-items: center;">
-            <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            </button>
-            <button class="btn" onclick="resetGame()" title="Reset">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
-            </button>
-        </div>
-
-        <div style="display: flex; gap: 12px; pointer-events: auto;">
+        <div class="score-group">
             <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
             <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
         </div>
     </div>
-    <div class="modal" id="modal">
-        <div style="text-align: center; background: rgba(15, 23, 42, 0.4); padding: 60px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.05);">
-            <div class="title" style="font-size: 80px;" id="modal-title">STALEMATE</div>
-            <p style="margin: 24px 0 40px; opacity: 0.5; font-weight: 600; letter-spacing: 1px;" id="modal-desc">No further synthesis possible.</p>
-            <button class="btn" style="padding: 24px 60px; font-size: 18px;" onclick="resetGame()">Reboot Matrix</button>
+
+    <!-- Bottom UI Container -->
+    <div class="ui ui-bottom">
+        <div class="btn-group">
+            <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity">
+                <svg id="gravity-icon" class="flip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
+                </svg>
+            </button>
+            <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <button class="btn" onclick="resetGame()" title="Reset">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
+            </button>
         </div>
     </div>
+
+    <!-- Modal overlay -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="title modal-title" id="modal-title">STALEMATE</div>
+            <p class="modal-desc" id="modal-desc">No further synthesis possible.</p>
+            <button class="btn" style="padding: 15px 40px; font-size: 16px; width: auto; border-radius: 20px; margin: 0 auto;" onclick="resetGame()">Reboot Matrix</button>
+        </div>
+    </div>
+    
     <script>
         const GRID_SIZE = 4, SPACING = 1.15;
         const COLORS = { 
-            2: 0xf4f1ea,    // Cream
-            4: 0x3498db,    // Sky Blue
-            8: 0xf39c12,    // Orange
-            16: 0x2ecc71,   // Green
-            32: 0xe74c3c,   // Red
-            64: 0x9b59b6,   // Purple
-            128: 0xf1c40f,  // Yellow
-            256: 0xff2d55,  // Pink
-            512: 0xff3b30,  // Bright Red
-            1024: 0x007aff, // Deep Blue
-            2048: 0xffcc00  // Gold
+            2: 0xf4f1ea, 4: 0x3498db, 8: 0xf39c12, 16: 0x2ecc71, 
+            32: 0xe74c3c, 64: 0x9b59b6, 128: 0xf1c40f, 256: 0xff2d55, 
+            512: 0xff3b30, 1024: 0x007aff, 2048: 0xffcc00
         };
+        
         let grid = [], score = 0, best = localStorage.getItem('cube2048_best') || 0;
         let history = [], moveCount = 0;
-        let selected = null, isOver = false, scene, camera, renderer, raycaster, mouse, blockMeshes = new Map(), textureCache = new Map();
+        let selected = null, isOver = false, gravityInverted = false;
+        let scene, camera, renderer, raycaster, mouse, cubeGroup;
+        let blockMeshes = new Map(), textureCache = new Map();
+        
         let rotX = 0.4, rotY = 0.6, isDrag = false, px = 0, py = 0, startX = 0, startY = 0;
+        let isFlipping = false, flipProgress = 0;
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
         function createTex(val) {
             if (textureCache.has(val)) return textureCache.get(val);
-            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+            const canvas = document.createElement('canvas'); 
+            canvas.width = 512; canvas.height = 512;
             const ctx = canvas.getContext('2d');
-            
             const color = '#' + (COLORS[val] || 0xedc22e).toString(16).padStart(6, '0');
             
-            // 1. Base background
             ctx.fillStyle = color;
             ctx.fillRect(0, 0, 512, 512);
             
-            // 2. Draw a slightly lighter "top" rounded surface
-            const m = 30; // margin
-            const r = 100; // radius
+            const m = 30, r = 100;
             ctx.beginPath();
             ctx.moveTo(m + r, m);
             ctx.lineTo(512 - m - r, m);
@@ -99,40 +151,38 @@
             ctx.quadraticCurveTo(m, m, m + r, m);
             ctx.closePath();
             
-            // Gradient for the top surface
             const grad = ctx.createLinearGradient(0, m, 0, 512 - m);
             grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
             
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.fillStyle = grad;
-            ctx.fill();
+            ctx.fillStyle = color; ctx.fill();
+            ctx.fillStyle = grad; ctx.fill();
             
-            // 3. Inner border/highlight
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 12;
-            ctx.stroke();
+            ctx.lineWidth = 12; ctx.stroke();
 
-            // 4. Text
             ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            ctx.shadowBlur = 20;
-            ctx.shadowOffsetY = 12;
+            ctx.shadowBlur = 20; ctx.shadowOffsetY = 12;
             
             ctx.fillStyle = val === 2 ? '#333333' : '#ffffff';
-            ctx.font = 'bold 280px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let fontSize = val >= 1000 ? 140 : val >= 100 ? 180 : 220;
+            ctx.font = `bold ${fontSize}px sans-serif`; 
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(val, 256, 256);
             
             const tex = new THREE.CanvasTexture(canvas);
             tex.anisotropy = 16;
+            tex.colorSpace = THREE.SRGBColorSpace;
             textureCache.set(val, tex);
             return tex;
         }
 
         function init() {
-            scene = new THREE.Scene(); scene.background = new THREE.Color(0x020617);
-            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            scene = new THREE.Scene(); 
+            scene.background = new THREE.Color(0x020617);
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 2000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
@@ -141,6 +191,9 @@
             renderer.toneMappingExposure = 1.0;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
             
+            cubeGroup = new THREE.Group();
+            scene.add(cubeGroup);
+
             scene.add(new THREE.AmbientLight(0xffffff, 0.4));
             scene.add(new THREE.HemisphereLight(0x8080ff, 0x000000, 0.6));
             
@@ -153,49 +206,49 @@
             dir.shadow.radius = 6;
             scene.add(dir);
 
-            // Starfield
+            const floorGeo = new THREE.PlaneGeometry(100, 100);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x051a05, roughness: 1.0, metalness: 0.0 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2; floor.position.y = -4; 
+            floor.receiveShadow = true; scene.add(floor);
+
             const starGeo = new THREE.BufferGeometry();
             const starPos = [];
             for(let i=0; i<5000; i++) {
-                const x = (Math.random() - 0.5) * 1000;
-                const y = (Math.random() - 0.5) * 1000;
-                const z = (Math.random() - 0.5) * 1000;
-                starPos.push(x, y, z);
+                const u = Math.random(), v = Math.random();
+                const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
+                const r = 1000 * Math.cbrt(Math.random());
+                starPos.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
             }
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
             const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, transparent: true, opacity: 0.8 });
-            const stars = new THREE.Points(starGeo, starMat);
-            scene.add(stars);
+            scene.add(new THREE.Points(starGeo, starMat));
 
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
 
-            renderer.domElement.style.touchAction = 'none';
-
             const startDrag = (x, y) => { 
-                isDrag = true; 
-                px = x; py = y; 
-                startX = x; startY = y; 
+                if (isFlipping || isOver) return;
+                isDrag = true; px = x; py = y; startX = x; startY = y; 
             };
             const moveDrag = (x, y) => { 
                 if (!isDrag) return; 
-                rotY -= (x - px) * 0.005; 
-                rotX += (y - py) * 0.005; 
-                rotX = Math.max(-1.4, Math.min(1.4, rotX)); 
-                px = x; py = y; 
+                rotY -= (x - px) * 0.005; rotX += (y - py) * 0.005; 
+                rotX = Math.max(-1.4, Math.min(1.4, rotX)); px = x; py = y; 
             };
-            const endDrag = () => { isDrag = false; };
+            const endDrag = (clientX, clientY) => { 
+                if (isDrag) {
+                    if (Math.sqrt(Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2)) <= 10) {
+                        handleAction(clientX, clientY);
+                    }
+                    isDrag = false; 
+                }
+            };
             
             const handleAction = (clientX, clientY) => {
+                if (isFlipping || isOver) return;
                 const rect = renderer.domElement.getBoundingClientRect();
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-                
-                // If moved more than 10px, it was a drag, not a click
-                if (Math.sqrt(dx*dx + dy*dy) > 10) return;
-
                 mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
                 mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-                
                 raycaster.setFromCamera(mouse, camera);
                 const hits = raycaster.intersectObjects(Array.from(blockMeshes.values()));
                 if (hits.length > 0) click(hits[0].object.userData.pos);
@@ -203,12 +256,8 @@
 
             renderer.domElement.addEventListener('pointerdown', (e) => startDrag(e.clientX, e.clientY));
             window.addEventListener('pointermove', (e) => moveDrag(e.clientX, e.clientY));
-            window.addEventListener('pointerup', (e) => {
-                if (isDrag) {
-                    handleAction(e.clientX, e.clientY);
-                    endDrag();
-                }
-            });
+            window.addEventListener('pointerup', (e) => endDrag(e.clientX, e.clientY));
+            window.addEventListener('pointercancel', () => isDrag = false);
 
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
@@ -223,36 +272,94 @@
 
             function loop() {
                 requestAnimationFrame(loop);
-                const r = 16;
-                camera.position.x = r * Math.sin(rotY) * Math.cos(rotX);
-                camera.position.y = r * Math.sin(rotX);
-                camera.position.z = r * Math.cos(rotY) * Math.cos(rotX);
+                
+                // Dynamic Camera Radius to ensure cube fully fits on mobile screens
+                const aspect = window.innerWidth / window.innerHeight;
+                const dynamicRadius = Math.max(16, 14 / aspect);
+
+                camera.position.set(
+                    dynamicRadius * Math.sin(rotY) * Math.cos(rotX), 
+                    dynamicRadius * Math.sin(rotX), 
+                    dynamicRadius * Math.cos(rotY) * Math.cos(rotX)
+                );
                 camera.lookAt(0, 0, 0);
 
-                // Smoothly animate block positions
-                for (const m of blockMeshes.values()) {
-                    if (m.userData.target) {
-                        // Use a slightly slower lerp for a more "gravitational" feel
-                        m.position.lerp(m.userData.target, 0.1);
+                if (isFlipping) {
+                    flipProgress += 0.035; 
+                    if (flipProgress >= 1) flipProgress = 1;
+                    
+                    const ease = flipProgress < 0.5 ? 4 * flipProgress * flipProgress * flipProgress : 1 - Math.pow(-2 * flipProgress + 2, 3) / 2;
+                    cubeGroup.rotation.z = ease * Math.PI; 
+                    
+                    if (flipProgress === 1) {
+                        isFlipping = false;
+                        cubeGroup.rotation.z = 0; 
+                        
+                        const newGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
+                        const off = (GRID_SIZE - 1) / 2;
+                        
+                        for (let x = 0; x < GRID_SIZE; x++) {
+                            for (let y = 0; y < GRID_SIZE; y++) {
+                                for (let z = 0; z < GRID_SIZE; z++) {
+                                    if (grid[x][y][z]) {
+                                        const newX = GRID_SIZE - 1 - x;
+                                        const newY = GRID_SIZE - 1 - y;
+                                        const newZ = z;
+                                        newGrid[newX][newY][newZ] = grid[x][y][z];
+                                        
+                                        const m = blockMeshes.get(grid[x][y][z].id);
+                                        if (m) {
+                                            m.position.set((newX - off) * SPACING, (newY - off) * SPACING, (newZ - off) * SPACING);
+                                            m.userData.target = m.position.clone();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        grid = newGrid;
+                        document.getElementById('gravity-btn').disabled = false;
+                        
+                        applyGravity();
+                        sync();
+                    }
+                } else {
+                    for (const m of blockMeshes.values()) {
+                        if (m.userData.target) m.position.lerp(m.userData.target, 0.15);
                     }
                 }
-
+                
                 renderer.render(scene, camera);
             }
             loop();
         }
 
+        function toggleGravity() {
+            if (isFlipping || isOver) return;
+            saveHistory();
+            
+            isFlipping = true;
+            flipProgress = 0;
+            
+            gravityInverted = !gravityInverted;
+            document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
+            document.getElementById('gravity-btn').disabled = true;
+        }
+
         function saveHistory() {
             const gridCopy = grid.map(layer => layer.map(row => row.map(cell => cell ? { ...cell } : null)));
-            history.push({ grid: gridCopy, score: score, moveCount: moveCount });
+            history.push({ grid: gridCopy, score: score, moveCount: moveCount, iconFlipped: gravityInverted });
             if (history.length > 30) history.shift();
             document.getElementById('undo-btn').disabled = false;
         }
 
         function undoMove() {
-            if (history.length === 0) return;
+            if (history.length === 0 || isFlipping) return;
             const last = history.pop();
-            grid = last.grid; score = last.score; moveCount = last.moveCount; selected = null; isOver = false;
+            grid = last.grid; score = last.score; moveCount = last.moveCount; 
+            gravityInverted = last.iconFlipped || false;
+            selected = null; isOver = false;
+            
+            document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
             document.getElementById('modal').style.display = 'none';
             if (history.length === 0) document.getElementById('undo-btn').disabled = true;
             sync();
@@ -265,92 +372,66 @@
                 grid[x][y][z] = { id: Math.random().toString(36).substr(2, 9), value: r > 0.9 ? 8 : r > 0.7 ? 4 : 2 };
             }
             score = 0; moveCount = 0; selected = null; isOver = false; history = [];
+            
+            isFlipping = false;
+            flipProgress = 0;
+            if (cubeGroup) cubeGroup.rotation.z = 0;
+            gravityInverted = false;
+            
+            document.getElementById('gravity-icon').style.transform = 'rotate(0deg)';
+            document.getElementById('gravity-btn').disabled = false;
             document.getElementById('undo-btn').disabled = true;
             document.getElementById('modal').style.display = 'none';
+            
+            applyGravity(); 
             sync();
         }
 
         function sync() {
             const off = (GRID_SIZE - 1) / 2, ids = new Set();
             for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
-                const b = grid[x][y][z]; if (!b) continue; ids.add(b.id);
+                const b = grid[x][y][z]; 
+                if (!b) continue; 
+                ids.add(b.id);
                 let m = blockMeshes.get(b.id);
+                
                 if (!m) {
                     const materials = [];
                     const tex = createTex(b.value);
                     for (let i = 0; i < 6; i++) {
-                        materials.push(new THREE.MeshStandardMaterial({ 
-                            map: tex, 
-                            metalness: 0.05, 
-                            roughness: 0.15
-                        }));
+                        materials.push(new THREE.MeshStandardMaterial({ map: tex, metalness: 0.1, roughness: 0.2 }));
                     }
                     m = new THREE.Mesh(blockGeometry, materials);
                     m.castShadow = true; m.receiveShadow = true; 
-                    scene.add(m); blockMeshes.set(b.id, m);
+                    cubeGroup.add(m); blockMeshes.set(b.id, m);
                     
-                    // If it's a newly spawned block, start it high up
                     const startY = b.isNew ? 12 : (y - off) * SPACING;
                     m.position.set((x - off) * SPACING, startY, (z - off) * SPACING);
                     if (b.isNew) delete b.isNew;
                 }
+                
                 m.userData.target = new THREE.Vector3((x - off) * SPACING, (y - off) * SPACING, (z - off) * SPACING);
                 m.userData.pos = [x, y, z];
                 const sel = selected && selected[0] === x && selected[1] === y && selected[2] === z;
                 
+                m.scale.setScalar(sel ? 1.15 : 1);
                 if (Array.isArray(m.material)) {
                     m.material.forEach((mat) => {
-                        mat.emissive.setHex(sel ? 0x333333 : 0);
-                        if (mat.map.image && mat.map.image.getContext) { // Check if it's our canvas texture
-                             // We don't update texture here for performance, we create new materials if value changes
-                        }
-                        // Check if value changed
+                        mat.emissive.setHex(sel ? 0x444444 : 0x000000);
                         if (m.userData.val !== b.value) {
-                            const newTex = createTex(b.value);
-                            mat.map = newTex;
+                            mat.map = createTex(b.value);
+                            mat.needsUpdate = true;
                         }
                     });
                 }
                 m.userData.val = b.value;
-                m.scale.setScalar(sel ? 1.15 : 1);
             }
-            // Cleanup removed blocks
+            
             for (const [id, m] of blockMeshes.entries()) {
-                if (!ids.has(id)) {
-                    scene.remove(m);
-                    blockMeshes.delete(id);
-                }
+                if (!ids.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); }
             }
             document.getElementById('score').innerText = score;
             document.getElementById('best').innerText = best;
-        }
-
-        function spawnBlock() {
-            // Find columns where the top spot is empty
-            const validColumns = [];
-            for (let x = 0; x < GRID_SIZE; x++) {
-                for (let z = 0; z < GRID_SIZE; z++) {
-                    if (!grid[x][GRID_SIZE - 1][z]) {
-                        validColumns.push({ x, z });
-                    }
-                }
-            }
-
-            if (validColumns.length > 0) {
-                const spot = validColumns[Math.floor(Math.random() * validColumns.length)];
-                const r = Math.random();
-                const val = r > 0.9 ? 8 : r > 0.7 ? 4 : 2;
-                
-                // Spawn at the top with a flag for animation
-                grid[spot.x][GRID_SIZE - 1][spot.z] = { 
-                    id: Math.random().toString(36).substr(2, 9), 
-                    value: val,
-                    isNew: true
-                };
-
-                // Apply gravity immediately
-                applyGravity();
-            }
         }
 
         function applyGravity() {
@@ -369,14 +450,40 @@
             grid = ng;
         }
 
+        function spawnBlock() {
+            const validColumns = [];
+            for (let x = 0; x < GRID_SIZE; x++) {
+                for (let z = 0; z < GRID_SIZE; z++) {
+                    if (!grid[x][GRID_SIZE - 1][z]) {
+                        validColumns.push({ x, z });
+                    }
+                }
+            }
+
+            if (validColumns.length > 0) {
+                const spot = validColumns[Math.floor(Math.random() * validColumns.length)];
+                const r = Math.random();
+                const val = r > 0.9 ? 8 : r > 0.7 ? 4 : 2;
+                
+                grid[spot.x][GRID_SIZE - 1][spot.z] = { 
+                    id: Math.random().toString(36).substr(2, 9), 
+                    value: val,
+                    isNew: true
+                };
+
+                applyGravity();
+            }
+        }
+
         function click(pos) {
-            if (isOver) return;
+            if (isOver || isFlipping) return;
             if (!selected) { selected = pos; }
             else if (selected[0] === pos[0] && selected[1] === pos[1] && selected[2] === pos[2]) { selected = null; }
             else {
                 const b1 = grid[selected[0]][selected[1]][selected[2]], b2 = grid[pos[0]][pos[1]][pos[2]];
                 const d = Math.abs(selected[0] - pos[0]) + Math.abs(selected[1] - pos[1]) + Math.abs(selected[2] - pos[2]);
-                if (b1 && b2 && b1.value === b2.value && d === 1) {
+                
+                if (b1 && b2 && b1.value === b2.value && d === 1) { 
                     saveHistory();
                     const v = b1.value * 2; 
                     score += v; 
@@ -384,18 +491,14 @@
                     if (score > best) { best = score; localStorage.setItem('cube2048_best', best); }
                     
                     grid[selected[0]][selected[1]][selected[2]] = null; 
-                    grid[pos[0]][pos[1]][pos[2]] = { id: Math.random().toString(36).substr(2, 9), value: v };
+                    grid[pos[0]][pos[1]][pos[2]] = { id: b2.id, value: v };
                     
                     applyGravity();
 
-                    // Every 5th move, spawn a new block
-                    if (moveCount % 5 === 0) {
-                        spawnBlock();
-                    }
-
+                    if (moveCount % 5 === 0) spawnBlock();
+                    
                     selected = null;
                     
-                    // Check win
                     if (v === 2048) {
                         isOver = true;
                         document.getElementById('modal-title').innerText = 'ZENITH';
@@ -403,7 +506,6 @@
                         document.getElementById('modal').style.display = 'flex';
                     }
 
-                    // Check game over
                     let canMove = false;
                     for (let x = 0; x < GRID_SIZE; x++) {
                         for (let y = 0; y < GRID_SIZE; y++) {
