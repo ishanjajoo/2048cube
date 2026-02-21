@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Cube 3D Standalone</title>
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #020617; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        #canvas-container { position: absolute; inset: 0; z-index: 0; }
+        .ui { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(2, 6, 23, 0.8) 0%, rgba(2, 6, 23, 0) 100%); }
+        .btn { pointer-events: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 50%; cursor: pointer; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
+        .btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); scale: 0.95; }
+        .btn:disabled { opacity: 0.1; cursor: not-allowed; transform: none; box-shadow: none; }
+        .score-box { background: rgba(15, 23, 42, 0.4); padding: 12px 20px; border-radius: 16px; text-align: center; min-width: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
+        .label { font-size: 9px; text-transform: uppercase; opacity: 0.6; letter-spacing: 2px; font-weight: 900; margin-bottom: 2px; color: #94a3b8; }
+        .value { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; color: white; }
+        .modal { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.9); display: none; align-items: center; justify-content: center; z-index: 50; pointer-events: auto; backdrop-filter: blur(10px); }
+        .title { font-size: 36px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.05); border-top-color: #22d3ee; border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="ui">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div class="title">CUBE 2048</div>
+            <div style="font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap;">SYNTHESIZE IDENTICAL NEIGHBORS</div>
+        </div>
+
+        <div style="display: flex; gap: 12px; pointer-events: auto; align-items: center;">
+            <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <button class="btn" onclick="resetGame()" title="Reset">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 12px; pointer-events: auto;">
+            <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
+            <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
+        </div>
+    </div>
+    <div class="modal" id="modal">
+        <div style="text-align: center; background: rgba(15, 23, 42, 0.4); padding: 60px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.05);">
+            <div class="title" style="font-size: 80px;" id="modal-title">STALEMATE</div>
+            <p style="margin: 24px 0 40px; opacity: 0.5; font-weight: 600; letter-spacing: 1px;" id="modal-desc">No further synthesis possible.</p>
+            <button class="btn" style="padding: 24px 60px; font-size: 18px;" onclick="resetGame()">Reboot Matrix</button>
+        </div>
+    </div>
+    <script>
+        const GRID_SIZE = 4, SPACING = 1.15;
+        const COLORS = { 
+            2: 0xf4f1ea,    // Cream
+            4: 0x3498db,    // Sky Blue
+            8: 0xf39c12,    // Orange
+            16: 0x2ecc71,   // Green
+            32: 0xe74c3c,   // Red
+            64: 0x9b59b6,   // Purple
+            128: 0xf1c40f,  // Yellow
+            256: 0xff2d55,  // Pink
+            512: 0xff3b30,  // Bright Red
+            1024: 0x007aff, // Deep Blue
+            2048: 0xffcc00  // Gold
+        };
+        let grid = [], score = 0, best = localStorage.getItem('cube2048_best') || 0;
+        let history = [], moveCount = 0;
+        let selected = null, isOver = false, scene, camera, renderer, raycaster, mouse, blockMeshes = new Map(), textureCache = new Map();
+        let rotX = 0.4, rotY = 0.6, isDrag = false, px = 0, py = 0, startX = 0, startY = 0;
+
+        const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+        function createTex(val) {
+            if (textureCache.has(val)) return textureCache.get(val);
+            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            const color = '#' + (COLORS[val] || 0xedc22e).toString(16).padStart(6, '0');
+            
+            // 1. Base background
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            // 2. Draw a slightly lighter "top" rounded surface
+            const m = 30; // margin
+            const r = 100; // radius
+            ctx.beginPath();
+            ctx.moveTo(m + r, m);
+            ctx.lineTo(512 - m - r, m);
+            ctx.quadraticCurveTo(512 - m, m, 512 - m, m + r);
+            ctx.lineTo(512 - m, 512 - m - r);
+            ctx.quadraticCurveTo(512 - m, 512 - m, 512 - m - r, 512 - m);
+            ctx.lineTo(m + r, 512 - m);
+            ctx.quadraticCurveTo(m, 512 - m, m, 512 - m - r);
+            ctx.lineTo(m, m + r);
+            ctx.quadraticCurveTo(m, m, m + r, m);
+            ctx.closePath();
+            
+            // Gradient for the top surface
+            const grad = ctx.createLinearGradient(0, m, 0, 512 - m);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
+            
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.fillStyle = grad;
+            ctx.fill();
+            
+            // 3. Inner border/highlight
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 12;
+            ctx.stroke();
+
+            // 4. Text
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetY = 12;
+            
+            ctx.fillStyle = val === 2 ? '#333333' : '#ffffff';
+            ctx.font = 'bold 280px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(val, 256, 256);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = 16;
+            textureCache.set(val, tex);
+            return tex;
+        }
+
+        function init() {
+            scene = new THREE.Scene(); scene.background = new THREE.Color(0x020617);
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+            scene.add(new THREE.HemisphereLight(0x8080ff, 0x000000, 0.6));
+            
+            const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+            dir.position.set(5, 15, 8);
+            dir.castShadow = true;
+            dir.shadow.mapSize.width = 2048; dir.shadow.mapSize.height = 2048;
+            dir.shadow.camera.left = -10; dir.shadow.camera.right = 10;
+            dir.shadow.camera.top = 10; dir.shadow.camera.bottom = -10;
+            dir.shadow.radius = 6;
+            scene.add(dir);
+
+            // Starfield
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = [];
+            for(let i=0; i<5000; i++) {
+                const x = (Math.random() - 0.5) * 1000;
+                const y = (Math.random() - 0.5) * 1000;
+                const z = (Math.random() - 0.5) * 1000;
+                starPos.push(x, y, z);
+            }
+            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, transparent: true, opacity: 0.8 });
+            const stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+
+            raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
+
+            renderer.domElement.style.touchAction = 'none';
+
+            const startDrag = (x, y) => { 
+                isDrag = true; 
+                px = x; py = y; 
+                startX = x; startY = y; 
+            };
+            const moveDrag = (x, y) => { 
+                if (!isDrag) return; 
+                rotY -= (x - px) * 0.005; 
+                rotX += (y - py) * 0.005; 
+                rotX = Math.max(-1.4, Math.min(1.4, rotX)); 
+                px = x; py = y; 
+            };
+            const endDrag = () => { isDrag = false; };
+            
+            const handleAction = (clientX, clientY) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                
+                // If moved more than 10px, it was a drag, not a click
+                if (Math.sqrt(dx*dx + dy*dy) > 10) return;
+
+                mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+                
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(Array.from(blockMeshes.values()));
+                if (hits.length > 0) click(hits[0].object.userData.pos);
+            };
+
+            renderer.domElement.addEventListener('pointerdown', (e) => startDrag(e.clientX, e.clientY));
+            window.addEventListener('pointermove', (e) => moveDrag(e.clientX, e.clientY));
+            window.addEventListener('pointerup', (e) => {
+                if (isDrag) {
+                    handleAction(e.clientX, e.clientY);
+                    endDrag();
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoMove(); }
+                if (e.key === 'r') resetGame();
+            });
+
+            function loop() {
+                requestAnimationFrame(loop);
+                const r = 16;
+                camera.position.x = r * Math.sin(rotY) * Math.cos(rotX);
+                camera.position.y = r * Math.sin(rotX);
+                camera.position.z = r * Math.cos(rotY) * Math.cos(rotX);
+                camera.lookAt(0, 0, 0);
+
+                // Smoothly animate block positions
+                for (const m of blockMeshes.values()) {
+                    if (m.userData.target) {
+                        // Use a slightly slower lerp for a more "gravitational" feel
+                        m.position.lerp(m.userData.target, 0.1);
+                    }
+                }
+
+                renderer.render(scene, camera);
+            }
+            loop();
+        }
+
+        function saveHistory() {
+            const gridCopy = grid.map(layer => layer.map(row => row.map(cell => cell ? { ...cell } : null)));
+            history.push({ grid: gridCopy, score: score, moveCount: moveCount });
+            if (history.length > 30) history.shift();
+            document.getElementById('undo-btn').disabled = false;
+        }
+
+        function undoMove() {
+            if (history.length === 0) return;
+            const last = history.pop();
+            grid = last.grid; score = last.score; moveCount = last.moveCount; selected = null; isOver = false;
+            document.getElementById('modal').style.display = 'none';
+            if (history.length === 0) document.getElementById('undo-btn').disabled = true;
+            sync();
+        }
+
+        function resetGame() {
+            grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
+            for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
+                const r = Math.random(); 
+                grid[x][y][z] = { id: Math.random().toString(36).substr(2, 9), value: r > 0.9 ? 8 : r > 0.7 ? 4 : 2 };
+            }
+            score = 0; moveCount = 0; selected = null; isOver = false; history = [];
+            document.getElementById('undo-btn').disabled = true;
+            document.getElementById('modal').style.display = 'none';
+            sync();
+        }
+
+        function sync() {
+            const off = (GRID_SIZE - 1) / 2, ids = new Set();
+            for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
+                const b = grid[x][y][z]; if (!b) continue; ids.add(b.id);
+                let m = blockMeshes.get(b.id);
+                if (!m) {
+                    const materials = [];
+                    const tex = createTex(b.value);
+                    for (let i = 0; i < 6; i++) {
+                        materials.push(new THREE.MeshStandardMaterial({ 
+                            map: tex, 
+                            metalness: 0.05, 
+                            roughness: 0.15
+                        }));
+                    }
+                    m = new THREE.Mesh(blockGeometry, materials);
+                    m.castShadow = true; m.receiveShadow = true; 
+                    scene.add(m); blockMeshes.set(b.id, m);
+                    
+                    // If it's a newly spawned block, start it high up
+                    const startY = b.isNew ? 12 : (y - off) * SPACING;
+                    m.position.set((x - off) * SPACING, startY, (z - off) * SPACING);
+                    if (b.isNew) delete b.isNew;
+                }
+                m.userData.target = new THREE.Vector3((x - off) * SPACING, (y - off) * SPACING, (z - off) * SPACING);
+                m.userData.pos = [x, y, z];
+                const sel = selected && selected[0] === x && selected[1] === y && selected[2] === z;
+                
+                if (Array.isArray(m.material)) {
+                    m.material.forEach((mat) => {
+                        mat.emissive.setHex(sel ? 0x333333 : 0);
+                        if (mat.map.image && mat.map.image.getContext) { // Check if it's our canvas texture
+                             // We don't update texture here for performance, we create new materials if value changes
+                        }
+                        // Check if value changed
+                        if (m.userData.val !== b.value) {
+                            const newTex = createTex(b.value);
+                            mat.map = newTex;
+                        }
+                    });
+                }
+                m.userData.val = b.value;
+                m.scale.setScalar(sel ? 1.15 : 1);
+            }
+            // Cleanup removed blocks
+            for (const [id, m] of blockMeshes.entries()) {
+                if (!ids.has(id)) {
+                    scene.remove(m);
+                    blockMeshes.delete(id);
+                }
+            }
+            document.getElementById('score').innerText = score;
+            document.getElementById('best').innerText = best;
+        }
+
+        function spawnBlock() {
+            // Find columns where the top spot is empty
+            const validColumns = [];
+            for (let x = 0; x < GRID_SIZE; x++) {
+                for (let z = 0; z < GRID_SIZE; z++) {
+                    if (!grid[x][GRID_SIZE - 1][z]) {
+                        validColumns.push({ x, z });
+                    }
+                }
+            }
+
+            if (validColumns.length > 0) {
+                const spot = validColumns[Math.floor(Math.random() * validColumns.length)];
+                const r = Math.random();
+                const val = r > 0.9 ? 8 : r > 0.7 ? 4 : 2;
+                
+                // Spawn at the top with a flag for animation
+                grid[spot.x][GRID_SIZE - 1][spot.z] = { 
+                    id: Math.random().toString(36).substr(2, 9), 
+                    value: val,
+                    isNew: true
+                };
+
+                // Apply gravity immediately
+                applyGravity();
+            }
+        }
+
+        function applyGravity() {
+            const ng = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
+            for (let x = 0; x < GRID_SIZE; x++) {
+                for (let z = 0; z < GRID_SIZE; z++) {
+                    let ny = 0; 
+                    for (let y = 0; y < GRID_SIZE; y++) {
+                        if (grid[x][y][z]) {
+                            ng[x][ny][z] = grid[x][y][z];
+                            ny++;
+                        }
+                    }
+                }
+            }
+            grid = ng;
+        }
+
+        function click(pos) {
+            if (isOver) return;
+            if (!selected) { selected = pos; }
+            else if (selected[0] === pos[0] && selected[1] === pos[1] && selected[2] === pos[2]) { selected = null; }
+            else {
+                const b1 = grid[selected[0]][selected[1]][selected[2]], b2 = grid[pos[0]][pos[1]][pos[2]];
+                const d = Math.abs(selected[0] - pos[0]) + Math.abs(selected[1] - pos[1]) + Math.abs(selected[2] - pos[2]);
+                if (b1 && b2 && b1.value === b2.value && d === 1) {
+                    saveHistory();
+                    const v = b1.value * 2; 
+                    score += v; 
+                    moveCount++;
+                    if (score > best) { best = score; localStorage.setItem('cube2048_best', best); }
+                    
+                    grid[selected[0]][selected[1]][selected[2]] = null; 
+                    grid[pos[0]][pos[1]][pos[2]] = { id: Math.random().toString(36).substr(2, 9), value: v };
+                    
+                    applyGravity();
+
+                    // Every 5th move, spawn a new block
+                    if (moveCount % 5 === 0) {
+                        spawnBlock();
+                    }
+
+                    selected = null;
+                    
+                    // Check win
+                    if (v === 2048) {
+                        isOver = true;
+                        document.getElementById('modal-title').innerText = 'ZENITH';
+                        document.getElementById('modal-desc').innerText = 'You have synthesized the ultimate cube.';
+                        document.getElementById('modal').style.display = 'flex';
+                    }
+
+                    // Check game over
+                    let canMove = false;
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        for (let y = 0; y < GRID_SIZE; y++) {
+                            for (let z = 0; z < GRID_SIZE; z++) {
+                                const c = grid[x][y][z];
+                                if (!c) continue;
+                                const ns = [[x+1,y,z],[x,y+1,z],[x,y,z+1]];
+                                for (const [nx,ny,nz] of ns) {
+                                    if (nx < GRID_SIZE && ny < GRID_SIZE && nz < GRID_SIZE && grid[nx][ny][nz] && grid[nx][ny][nz].value === c.value) {
+                                        canMove = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!canMove) {
+                        isOver = true;
+                        document.getElementById('modal-title').innerText = 'STALEMATE';
+                        document.getElementById('modal-desc').innerText = 'No further synthesis possible.';
+                        document.getElementById('modal').style.display = 'flex';
+                    }
+                } else { selected = pos; }
+            }
+            sync();
+        }
+
+        function initGame() {
+            try {
+                init(); 
+                resetGame();
+            } catch (e) {
+                console.error(e);
+                alert("Critical System Failure: " + e.message);
+            }
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
