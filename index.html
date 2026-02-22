@@ -205,6 +205,45 @@
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
+        /* --- Storage & Persistence Functions --- */
+        function saveGameState() {
+            const state = {
+                grid: grid,
+                score: score,
+                moveCount: moveCount,
+                gravityInverted: gravityInverted,
+                hasWon: hasWon,
+                history: history
+            };
+            localStorage.setItem('cube2048_state', JSON.stringify(state));
+        }
+
+        function loadGameState() {
+            const saved = localStorage.getItem('cube2048_state');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    grid = state.grid;
+                    score = state.score;
+                    moveCount = state.moveCount;
+                    gravityInverted = state.gravityInverted || false;
+                    hasWon = state.hasWon || false;
+                    history = state.history || [];
+                    
+                    document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
+                    document.getElementById('undo-btn').disabled = history.length === 0;
+                    
+                    sync();
+                    checkGameState();
+                    return true;
+                } catch (e) {
+                    console.error("Failed to load state", e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
         /* --- Banner Management Functions --- */
         function showBanner(type) {
             currentBannerType = type;
@@ -278,7 +317,7 @@
             else if (canMove && currentBannerType === 'stalemate') hideBanner();
         }
 
-        /* --- Procedural Block Generation --- */
+        /* --- Procedural Textures Generation --- */
         function createTex(val) {
             if (textureCache.has(val)) return textureCache.get(val);
             const canvas = document.createElement('canvas'); 
@@ -331,10 +370,30 @@
             return tex;
         }
 
+        /* --- Procedural Nebula Generation --- */
+        function createNebulaTexture(colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const cx = 256, cy = 256, r = 256;
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            
+            const c = new THREE.Color(colorHex);
+            gradient.addColorStop(0, `rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, 0.6)`);
+            gradient.addColorStop(0.4, `rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, 0.2)`);
+            gradient.addColorStop(1, `rgba(0, 0, 0, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+
         /* --- Initialization --- */
         function init() {
             scene = new THREE.Scene(); 
-            scene.background = new THREE.Color(0x020617);
+            scene.background = new THREE.Color(0x02040a); // Deepest dark blue/black
             camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 2000);
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -350,8 +409,9 @@
             scene.add(cubeGroup);
 
             // Lighting setup
-            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-            scene.add(new THREE.HemisphereLight(0x8080ff, 0x000000, 0.6));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            // Increased ground bounce color to ensure underside of floating cube is visible
+            scene.add(new THREE.HemisphereLight(0x8080ff, 0x202040, 0.8)); 
             
             const dir = new THREE.DirectionalLight(0xffffff, 1.0);
             dir.position.set(5, 15, 8);
@@ -362,25 +422,68 @@
             dir.shadow.radius = 6;
             scene.add(dir);
 
-            // Base shadow catcher floor
-            const floorGeo = new THREE.PlaneGeometry(100, 100);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x051a05, roughness: 1.0, metalness: 0.0 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2; floor.position.y = -4; 
-            floor.receiveShadow = true; scene.add(floor);
-
-            // 5000 particle starfield
+            // Bright, Colorful Starfield
             const starGeo = new THREE.BufferGeometry();
             const starPos = [];
-            for(let i=0; i<5000; i++) {
+            const starColors = [];
+            const colorObj = new THREE.Color();
+            
+            for(let i = 0; i < 8000; i++) {
                 const u = Math.random(), v = Math.random();
                 const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
-                const r = 1000 * Math.cbrt(Math.random());
+                const r = 800 * Math.cbrt(Math.random());
+                
+                // Keep stars outside the immediate play area
+                if (r < 50) continue; 
+                
                 starPos.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                
+                // Subtly tint some stars blue or orange/yellow for depth
+                const randHue = Math.random();
+                if(randHue > 0.90) colorObj.setHSL(0.6, 0.8, 0.9); // Pale Blue
+                else if(randHue > 0.80) colorObj.setHSL(0.1, 0.8, 0.9); // Pale Yellow/Orange
+                else colorObj.setHSL(0, 0, 1.0); // Pure White
+                
+                starColors.push(colorObj.r, colorObj.g, colorObj.b);
             }
+            
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, transparent: true, opacity: 0.8 });
+            starGeo.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+            
+            const starMat = new THREE.PointsMaterial({ 
+                size: 1.5, 
+                transparent: true, 
+                opacity: 1.0,
+                vertexColors: true,
+                sizeAttenuation: true
+            });
             scene.add(new THREE.Points(starGeo, starMat));
+
+            // Ambient Nebula Clouds
+            const nebulaColors = [0x8a2be2, 0x4169e1, 0xff1493, 0x00ced1]; // Purple, Royal Blue, Deep Pink, Dark Turquoise
+            const nebulaGroup = new THREE.Group();
+            for(let i = 0; i < 20; i++) {
+                const color = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
+                const mat = new THREE.SpriteMaterial({ 
+                    map: createNebulaTexture(color), 
+                    blending: THREE.AdditiveBlending,
+                    transparent: true,
+                    opacity: 0.3 + Math.random() * 0.4
+                });
+                const sprite = new THREE.Sprite(mat);
+                
+                // Position far away in a spherical shell
+                const theta = Math.random() * 2.0 * Math.PI;
+                const phi = Math.acos(2.0 * Math.random() - 1.0);
+                const r = 400 + Math.random() * 300; 
+                sprite.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+                
+                // Scale big to create wide cloud effects
+                const scale = 200 + Math.random() * 400;
+                sprite.scale.set(scale, scale, 1);
+                nebulaGroup.add(sprite);
+            }
+            scene.add(nebulaGroup);
 
             // Interaction Event Listeners
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
@@ -392,7 +495,7 @@
             const moveDrag = (x, y) => { 
                 if (!isDrag) return; 
                 rotY -= (x - px) * 0.005; rotX += (y - py) * 0.005; 
-                // Restrict vertical orbit to prevent flipping camera over
+                // Restrict vertical orbit to prevent completely flipping camera over
                 rotX = Math.max(-1.4, Math.min(1.4, rotX)); 
                 px = x; py = y; 
             };
@@ -446,6 +549,10 @@
                 );
                 camera.lookAt(0, 0, 0);
 
+                // Add extremely slow rotation to nebula for dynamic feeling
+                nebulaGroup.rotation.y += 0.0005;
+                nebulaGroup.rotation.z += 0.0002;
+
                 if (isFlipping) {
                     flipProgress += 0.035; 
                     if (flipProgress >= 1) flipProgress = 1;
@@ -486,6 +593,7 @@
                         applyGravity();
                         sync();
                         checkGameState();
+                        saveGameState(); // Save state after flipping completes
                     }
                 } else {
                     for (const m of blockMeshes.values()) {
@@ -640,6 +748,7 @@
                 } else {
                     checkGameState();
                 }
+                saveGameState(); // Save state after successful directional move
             } else {
                 // Silently drop history if move was mathematically invalid to not waste player's turn
                 history.pop();
@@ -681,6 +790,7 @@
             if (history.length === 0) document.getElementById('undo-btn').disabled = true;
             sync();
             checkGameState();
+            saveGameState(); // Save state after undo
         }
 
         function resetGame() {
@@ -704,6 +814,7 @@
             
             applyGravity(); 
             sync();
+            saveGameState(); // Save baseline state after full reset
         }
 
         function sync() {
@@ -827,12 +938,16 @@
                 } else { selected = pos; }
             }
             sync();
+            saveGameState(); // Save state after clicking/selecting/merging
         }
 
         function initGame() {
             try {
                 init(); 
-                resetGame();
+                // Attempt to load saved progress. If it fails or is empty, start fresh.
+                if (!loadGameState()) {
+                    resetGame();
+                }
             } catch (e) {
                 console.error(e);
                 alert("Critical System Failure: " + e.message);
