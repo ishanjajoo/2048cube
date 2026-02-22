@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2048 Cube 3D Standalone</title>
+    <title>3D 2048 Cube Matrix</title>
+    <!-- Three.js Engine -->
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <style>
+        /* Core Reset & Fullscreen Setup */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background-color: #020617; color: white; 
@@ -38,6 +40,9 @@
         .title { font-size: 36px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; line-height: 1; }
         .subtitle { font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; margin-top: 6px; }
         
+        /* Top Right Panel */
+        .right-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
+
         .score-group { display: flex; gap: 12px; }
         .score-box { background: rgba(15, 23, 42, 0.4); padding: 12px 20px; border-radius: 16px; text-align: center; min-width: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
         .label { font-size: 9px; text-transform: uppercase; opacity: 0.6; letter-spacing: 2px; font-weight: 900; margin-bottom: 2px; color: #94a3b8; }
@@ -49,20 +54,6 @@
         .btn:active { transform: translateY(0); scale: 0.95; }
         .btn:disabled { opacity: 0.1; cursor: not-allowed; transform: none; box-shadow: none; }
         
-        /* Power Move Button Specific Styling */
-        @keyframes powerPulse {
-            0% { box-shadow: 0 0 10px rgba(34, 211, 238, 0.4); transform: scale(1); }
-            50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.8); transform: scale(1.05); }
-            100% { box-shadow: 0 0 10px rgba(34, 211, 238, 0.4); transform: scale(1); }
-        }
-        #power-btn {
-            display: none;
-            color: #22d3ee;
-            border-color: rgba(34, 211, 238, 0.5);
-            background: rgba(34, 211, 238, 0.1);
-            animation: powerPulse 2s infinite;
-        }
-
         .flip-icon { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
         /* Highly Visible, Non-blocking Floating Banner */
@@ -110,8 +101,10 @@
         }
         .banner-btn:active { transform: scale(0.92); }
 
+        /* Responsive Breakpoints */
         @media (max-width: 768px) {
             .ui-top { flex-direction: column; align-items: center; gap: 15px; padding: max(15px, env(safe-area-inset-top)) 15px 15px; text-align: center; }
+            .right-panel { align-items: center; width: 100%; gap: 12px; }
             .title-container { text-align: center; }
             .title { font-size: 28px; }
             .score-box { min-width: 70px; padding: 10px 15px; }
@@ -142,9 +135,20 @@
             <div class="title">CUBE 2048</div>
             <div class="subtitle">SYNTHESIZE IDENTICAL NEIGHBORS</div>
         </div>
-        <div class="score-group">
-            <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
-            <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
+        <div class="right-panel">
+            <div class="score-group">
+                <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
+                <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
+            </div>
+            <!-- Top Action Buttons -->
+            <div class="btn-group">
+                <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                <button class="btn" onclick="resetGame()" title="Reset">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -157,26 +161,28 @@
         <button class="banner-btn" id="banner-btn" onclick="bannerAction()">RESTART</button>
     </div>
 
+    <!-- Bottom Controls -->
     <div class="ui ui-bottom">
         <div class="btn-group">
-            <button id="power-btn" class="btn" onclick="powerMove()" title="Power Move">
-                <!-- SVG dynamically injected -->
+            <button id="move-left-btn" class="btn" onclick="directionalMove('left')" title="Slide Blocks Left (Relative to Camera)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <button id="move-down-btn" class="btn" onclick="directionalMove('down')" title="Push and Merge Blocks Towards the Bottom Floor">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+            </button>
+            <button id="move-right-btn" class="btn" onclick="directionalMove('right')" title="Slide Blocks Right (Relative to Camera)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </button>
             <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity">
                 <svg id="gravity-icon" class="flip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
                 </svg>
             </button>
-            <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            </button>
-            <button class="btn" onclick="resetGame()" title="Reset">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
-            </button>
         </div>
     </div>
     
     <script>
+        // Game Constants
         const GRID_SIZE = 4, SPACING = 1.15;
         const COLORS = { 
             2: 0xf4f1ea, 4: 0x3498db, 8: 0xf39c12, 16: 0x2ecc71, 
@@ -184,12 +190,14 @@
             512: 0xff3b30, 1024: 0x007aff, 2048: 0xffcc00
         };
         
+        // State Variables
         let grid = [], score = 0, best = localStorage.getItem('cube2048_best') || 0;
         let history = [], moveCount = 0;
-        let selected = null, gravityInverted = false, powerDirection = null;
+        let selected = null, gravityInverted = false; 
+        
+        // Three.js Objects
         let scene, camera, renderer, raycaster, mouse, cubeGroup;
         let blockMeshes = new Map(), textureCache = new Map();
-        
         let rotX = 0.4, rotY = 0.6, isDrag = false, px = 0, py = 0, startX = 0, startY = 0;
         let isFlipping = false, flipProgress = 0;
         let hasWon = false, currentBannerType = '';
@@ -197,7 +205,7 @@
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-        /* Banner Management Functions */
+        /* --- Banner Management Functions --- */
         function showBanner(type) {
             currentBannerType = type;
             const banner = document.getElementById('banner');
@@ -216,6 +224,8 @@
             }
 
             banner.className = 'banner show ' + type;
+            
+            // Pointer events none for 1.5s to prevent accidental spam clicking
             if(bannerTimeout) clearTimeout(bannerTimeout);
             bannerTimeout = setTimeout(() => {
                 if (currentBannerType === type) {
@@ -241,11 +251,15 @@
 
         function checkGameState() {
             let canMove = false;
+            // Check for empty spaces or matching neighbors
             for (let x = 0; x < GRID_SIZE; x++) {
                 for (let y = 0; y < GRID_SIZE; y++) {
                     for (let z = 0; z < GRID_SIZE; z++) {
+                        if (!grid[x][y][z]) {
+                            canMove = true;
+                            break;
+                        }
                         const c = grid[x][y][z];
-                        if (!c) continue;
                         const ns = [[x+1,y,z],[x,y+1,z],[x,y,z+1]];
                         for (const [nx,ny,nz] of ns) {
                             if (nx < GRID_SIZE && ny < GRID_SIZE && nz < GRID_SIZE && grid[nx][ny][nz] && grid[nx][ny][nz].value === c.value) {
@@ -264,6 +278,7 @@
             else if (canMove && currentBannerType === 'stalemate') hideBanner();
         }
 
+        /* --- Procedural Block Generation --- */
         function createTex(val) {
             if (textureCache.has(val)) return textureCache.get(val);
             const canvas = document.createElement('canvas'); 
@@ -274,6 +289,7 @@
             ctx.fillStyle = color;
             ctx.fillRect(0, 0, 512, 512);
             
+            // Rounded rectangle inner body
             const m = 30, r = 100;
             ctx.beginPath();
             ctx.moveTo(m + r, m);
@@ -287,6 +303,7 @@
             ctx.quadraticCurveTo(m, m, m + r, m);
             ctx.closePath();
             
+            // Glossy gradient
             const grad = ctx.createLinearGradient(0, m, 0, 512 - m);
             grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
@@ -300,6 +317,7 @@
             ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
             ctx.shadowBlur = 20; ctx.shadowOffsetY = 12;
             
+            // Text sizing
             ctx.fillStyle = val === 2 ? '#333333' : '#ffffff';
             let fontSize = val >= 1000 ? 140 : val >= 100 ? 180 : 220;
             ctx.font = `bold ${fontSize}px sans-serif`; 
@@ -313,6 +331,7 @@
             return tex;
         }
 
+        /* --- Initialization --- */
         function init() {
             scene = new THREE.Scene(); 
             scene.background = new THREE.Color(0x020617);
@@ -330,6 +349,7 @@
             cubeGroup = new THREE.Group();
             scene.add(cubeGroup);
 
+            // Lighting setup
             scene.add(new THREE.AmbientLight(0xffffff, 0.4));
             scene.add(new THREE.HemisphereLight(0x8080ff, 0x000000, 0.6));
             
@@ -342,12 +362,14 @@
             dir.shadow.radius = 6;
             scene.add(dir);
 
+            // Base shadow catcher floor
             const floorGeo = new THREE.PlaneGeometry(100, 100);
             const floorMat = new THREE.MeshStandardMaterial({ color: 0x051a05, roughness: 1.0, metalness: 0.0 });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2; floor.position.y = -4; 
             floor.receiveShadow = true; scene.add(floor);
 
+            // 5000 particle starfield
             const starGeo = new THREE.BufferGeometry();
             const starPos = [];
             for(let i=0; i<5000; i++) {
@@ -360,6 +382,7 @@
             const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, transparent: true, opacity: 0.8 });
             scene.add(new THREE.Points(starGeo, starMat));
 
+            // Interaction Event Listeners
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
 
             const startDrag = (x, y) => { 
@@ -369,10 +392,13 @@
             const moveDrag = (x, y) => { 
                 if (!isDrag) return; 
                 rotY -= (x - px) * 0.005; rotX += (y - py) * 0.005; 
-                rotX = Math.max(-1.4, Math.min(1.4, rotX)); px = x; py = y; 
+                // Restrict vertical orbit to prevent flipping camera over
+                rotX = Math.max(-1.4, Math.min(1.4, rotX)); 
+                px = x; py = y; 
             };
             const endDrag = (clientX, clientY) => { 
                 if (isDrag) {
+                    // Treat short drags (<10px) as clicks
                     if (Math.sqrt(Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2)) <= 10) {
                         handleAction(clientX, clientY);
                     }
@@ -406,6 +432,7 @@
                 if (e.key === 'r') resetGame();
             });
 
+            // Main Animation Render Loop
             function loop() {
                 requestAnimationFrame(loop);
                 
@@ -423,6 +450,7 @@
                     flipProgress += 0.035; 
                     if (flipProgress >= 1) flipProgress = 1;
                     
+                    // Cubic Ease-in-out
                     const ease = flipProgress < 0.5 ? 4 * flipProgress * flipProgress * flipProgress : 1 - Math.pow(-2 * flipProgress + 2, 3) / 2;
                     cubeGroup.rotation.z = ease * Math.PI; 
                     
@@ -430,6 +458,7 @@
                         isFlipping = false;
                         cubeGroup.rotation.z = 0; 
                         
+                        // Execute Matrix Coordinate Mapping logically
                         const newGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
                         const off = (GRID_SIZE - 1) / 2;
                         
@@ -469,36 +498,51 @@
             loop();
         }
 
-        /* Update Dynamic Power Button Display */
-        function updatePowerButtonUI() {
-            const pBtn = document.getElementById('power-btn');
-            if (!powerDirection) {
-                pBtn.style.display = 'none';
-                return;
-            }
-            pBtn.style.display = 'flex';
-            pBtn.title = `Power Move: Swipe ${powerDirection.charAt(0).toUpperCase() + powerDirection.slice(1)}`;
-            
-            let svgPath = '';
-            if (powerDirection === 'left') svgPath = '<line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>';
-            if (powerDirection === 'right') svgPath = '<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>';
-            if (powerDirection === 'forward') svgPath = '<line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline>';
-            if (powerDirection === 'backward') svgPath = '<line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline>';
-            
-            pBtn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${svgPath}</svg>`;
+        /* 
+         * Camera-Relative Axis Mapper
+         * Evaluates the 4 horizontal world directions (+x, -x, +z, -z) relative to current camera view.
+         * Selects the world axis that aligns best with the screen "Right" or "Left".
+         */
+        function getScreenMappedDirection(screenDir) {
+            const axes = [
+                { axis: 'x', dir: 1, vec: new THREE.Vector3(1, 0, 0) },
+                { axis: 'x', dir: -1, vec: new THREE.Vector3(-1, 0, 0) },
+                { axis: 'z', dir: 1, vec: new THREE.Vector3(0, 0, 1) },
+                { axis: 'z', dir: -1, vec: new THREE.Vector3(0, 0, -1) }
+            ];
+
+            let bestMatch = null;
+            let maxScore = -Infinity;
+
+            axes.forEach(a => {
+                // By projecting the unit vector directly, we get its screen-space direction relative to origin (0,0,0)
+                const p = a.vec.clone().project(camera);
+                
+                // If seeking right, high positive p.x is best.
+                // If seeking left, high negative p.x is best (so we maximize -p.x).
+                const score = (screenDir === 'right') ? p.x : -p.x;
+                
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMatch = a;
+                }
+            });
+
+            return bestMatch;
         }
 
-        /* Power Move Logic - Evaluates standard 2048 sliding per line */
+        /* Standard 2048 sliding logic on a single 1D array */
         function slideLine(line) {
             let newLine = [];
             let scoreGained = 0;
             let filtered = line.filter(b => b !== null);
             let i = 0;
+            // Pack toward index 0
             while (i < filtered.length) {
                 if (i + 1 < filtered.length && filtered[i].value === filtered[i+1].value) {
                     let val = filtered[i].value * 2;
                     scoreGained += val;
-                    newLine.push({ id: filtered[i].id, value: val }); // preserve ID for smooth visual merging
+                    newLine.push({ id: filtered[i].id, value: val }); // preserve ID for smooth merge animation
                     i += 2;
                 } else {
                     newLine.push(filtered[i]);
@@ -509,52 +553,75 @@
             return { newLine, scoreGained };
         }
 
-        function powerMove() {
-            if (!powerDirection || isFlipping) return;
+        function directionalMove(direction) {
+            if (isFlipping) return;
             saveHistory();
             
             let changed = false;
             
-            for (let y = 0; y < GRID_SIZE; y++) {
-                if (powerDirection === 'left' || powerDirection === 'right') {
+            if (direction === 'down') {
+                // Move structurally DOWN along the fixed Y axis (packing towards Y = 0)
+                for (let x = 0; x < GRID_SIZE; x++) {
                     for (let z = 0; z < GRID_SIZE; z++) {
                         let line = [];
-                        for (let x = 0; x < GRID_SIZE; x++) line.push(grid[x][y][z]);
-                        if (powerDirection === 'right') line.reverse();
+                        for (let y = 0; y < GRID_SIZE; y++) line.push(grid[x][y][z]);
                         
-                        let res = slideLine(line);
+                        let res = slideLine(line); // slides and merges towards index 0
                         let newLine = res.newLine;
-                        score += res.scoreGained;
-                        if (powerDirection === 'right') newLine.reverse();
                         
-                        for (let x = 0; x < GRID_SIZE; x++) {
-                            if (grid[x][y][z] !== newLine[x]) changed = true;
-                            grid[x][y][z] = newLine[x];
+                        for (let y = 0; y < GRID_SIZE; y++) {
+                            if (grid[x][y][z] !== newLine[y]) changed = true;
+                            grid[x][y][z] = newLine[y];
                         }
-                    }
-                } else if (powerDirection === 'forward' || powerDirection === 'backward') {
-                    for (let x = 0; x < GRID_SIZE; x++) {
-                        let line = [];
-                        for (let z = 0; z < GRID_SIZE; z++) line.push(grid[x][y][z]);
-                        if (powerDirection === 'backward') line.reverse();
-                        
-                        let res = slideLine(line);
-                        let newLine = res.newLine;
                         score += res.scoreGained;
-                        if (powerDirection === 'backward') newLine.reverse();
-                        
+                    }
+                }
+            } else if (direction === 'right' || direction === 'left') {
+                // Move dynamically RIGHT or LEFT relative to current camera perspective (packing along X or Z)
+                const match = getScreenMappedDirection(direction);
+                
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    if (match.axis === 'x') {
                         for (let z = 0; z < GRID_SIZE; z++) {
-                            if (grid[x][y][z] !== newLine[z]) changed = true;
-                            grid[x][y][z] = newLine[z];
+                            let line = [];
+                            for (let x = 0; x < GRID_SIZE; x++) line.push(grid[x][y][z]);
+                            
+                            if (match.dir === 1) line.reverse(); // If heading +X, target is array end
+                            let res = slideLine(line);
+                            let newLine = res.newLine;
+                            if (match.dir === 1) newLine.reverse();
+                            
+                            for (let x = 0; x < GRID_SIZE; x++) {
+                                if (grid[x][y][z] !== newLine[x]) changed = true;
+                                grid[x][y][z] = newLine[x];
+                            }
+                            score += res.scoreGained;
+                        }
+                    } else if (match.axis === 'z') {
+                        for (let x = 0; x < GRID_SIZE; x++) {
+                            let line = [];
+                            for (let z = 0; z < GRID_SIZE; z++) line.push(grid[x][y][z]);
+                            
+                            if (match.dir === 1) line.reverse(); // If heading +Z, target is array end
+                            let res = slideLine(line);
+                            let newLine = res.newLine;
+                            if (match.dir === 1) newLine.reverse();
+                            
+                            for (let z = 0; z < GRID_SIZE; z++) {
+                                if (grid[x][y][z] !== newLine[z]) changed = true;
+                                grid[x][y][z] = newLine[z];
+                            }
+                            score += res.scoreGained;
                         }
                     }
                 }
             }
             
             if (changed) {
-                applyGravity(); // Post-slide, blocks will naturally pack towards lowest Y index!
-                powerDirection = null;
-                updatePowerButtonUI();
+                applyGravity(); // Post-slide, ensure any newly suspended blocks naturally fall down
+                spawnBlock();   // Spawns a new block after every move
+                moveCount++;
+                
                 if (score > best) { best = score; localStorage.setItem('cube2048_best', best); }
                 sync();
                 
@@ -574,7 +641,7 @@
                     checkGameState();
                 }
             } else {
-                // If button did nothing, silently undo the saved state to not eat memory/confuse player
+                // Silently drop history if move was mathematically invalid to not waste player's turn
                 history.pop();
                 if (history.length === 0) document.getElementById('undo-btn').disabled = true;
             }
@@ -596,8 +663,7 @@
                 grid: gridCopy, 
                 score: score, 
                 moveCount: moveCount, 
-                iconFlipped: gravityInverted,
-                powerDirection: powerDirection 
+                iconFlipped: gravityInverted
             });
             if (history.length > 30) history.shift();
             document.getElementById('undo-btn').disabled = false;
@@ -608,11 +674,9 @@
             const last = history.pop();
             grid = last.grid; score = last.score; moveCount = last.moveCount; 
             gravityInverted = last.iconFlipped || false;
-            powerDirection = last.powerDirection || null;
             selected = null;
             
             document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-            updatePowerButtonUI();
             
             if (history.length === 0) document.getElementById('undo-btn').disabled = true;
             sync();
@@ -632,13 +696,11 @@
             if (cubeGroup) cubeGroup.rotation.z = 0;
             gravityInverted = false;
             hasWon = false;
-            powerDirection = null;
             
             document.getElementById('gravity-icon').style.transform = 'rotate(0deg)';
             document.getElementById('gravity-btn').disabled = false;
             document.getElementById('undo-btn').disabled = true;
             hideBanner();
-            updatePowerButtonUI();
             
             applyGravity(); 
             sync();
@@ -696,6 +758,7 @@
             for (let x = 0; x < GRID_SIZE; x++) {
                 for (let z = 0; z < GRID_SIZE; z++) {
                     let ny = 0; 
+                    // Pack all present blocks down to 0 indexed Y
                     for (let y = 0; y < GRID_SIZE; y++) {
                         if (grid[x][y][z]) {
                             ng[x][ny][z] = grid[x][y][z];
@@ -711,7 +774,7 @@
             const validColumns = [];
             for (let x = 0; x < GRID_SIZE; x++) {
                 for (let z = 0; z < GRID_SIZE; z++) {
-                    if (!grid[x][GRID_SIZE - 1][z]) {
+                    if (!grid[x][GRID_SIZE - 1][z]) { // Ensure column top is free
                         validColumns.push({ x, z });
                     }
                 }
@@ -751,15 +814,7 @@
                     grid[pos[0]][pos[1]][pos[2]] = { id: b2.id, value: v };
                     
                     applyGravity();
-
-                    if (moveCount > 0 && moveCount % 5 === 0) {
-                        spawnBlock();
-                        
-                        // After every 5th move, we generate/refresh the power direction!
-                        const dirs = ['left', 'right', 'forward', 'backward'];
-                        powerDirection = dirs[Math.floor(Math.random() * dirs.length)];
-                        updatePowerButtonUI();
-                    }
+                    spawnBlock(); // New block falls after every successful merge
                     
                     selected = null;
                     
