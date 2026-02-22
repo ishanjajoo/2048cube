@@ -697,9 +697,7 @@
                 applyGravity(); 
                 moveCount++;
                 
-                if (moveCount % 5 === 0) {
-                    spawnBlock();   
-                }
+                spawnBlock(); // New block falls after every move
                 
                 if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best', best); }
                 sync();
@@ -895,9 +893,7 @@
                     
                     applyGravity();
                     
-                    if (moveCount % 5 === 0) {
-                        spawnBlock(); 
-                    }
+                    spawnBlock(); // New block falls after every successful manual merge
                     
                     selected = null;
                     
