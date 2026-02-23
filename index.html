@@ -4,19 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>2048 Cube 3D</title>
+    
+    <!-- Google AdSense Code -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7156019979499838" crossorigin="anonymous"></script>
+    
     <!-- Three.js Engine -->
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    
     <style>
-        /* Core Reset & Fullscreen Setup */
+        /* Core Reset & Flex Layout to protect against Ad overlaps */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background-color: #02040a; color: white; 
+            background-color: #02040a; color: white; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
+
+        /* Dedicated Ad Container at the top - ensures ads naturally push the game down without overlapping */
+        #ad-container {
+            width: 100%;
+            z-index: 100;
+            position: relative;
+            background: transparent;
+        }
+
+        /* Game wrapper takes up all remaining vertical space */
+        #game-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+
         #canvas-container { position: absolute; inset: 0; z-index: 0; touch-action: none; }
         
         /* Game UI Wrapper */
@@ -160,70 +185,77 @@
     </style>
 </head>
 <body>
-    <div id="canvas-container"></div>
     
-    <!-- Main Game UI -->
-    <div id="game-ui">
-        <div class="ui ui-top">
-            <div class="title-container">
-                <div class="title" id="game-title">2048 CUBE 3D</div>
-                <div class="subtitle">MERGE IDENTICAL NEIGHBOURS</div>
-            </div>
-            <div class="right-panel">
-                <div class="score-group">
-                    <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
-                    <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
+    <!-- Optional: Manual Ad Placement Container -->
+    <!-- If AdSense injects an Anchor Ad, it naturally shrinks the game-wrapper below it -->
+    <div id="ad-container"></div>
+    
+    <!-- Game Container (Dynamically resizes to avoid ad overlap) -->
+    <div id="game-wrapper">
+        <div id="canvas-container"></div>
+        
+        <!-- Main Game UI -->
+        <div id="game-ui">
+            <div class="ui ui-top">
+                <div class="title-container">
+                    <div class="title" id="game-title">2048 CUBE 3D</div>
+                    <div class="subtitle">Click or Slide to merge identical boxes</div>
                 </div>
+                <div class="right-panel">
+                    <div class="score-group">
+                        <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
+                        <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
+                    </div>
+                    <div class="btn-group">
+                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        </button>
+                        <button class="btn" onclick="promptReset()" title="Reset">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banner for Game Over / Zenith states -->
+            <div class="banner" id="banner">
+                <div class="banner-text">
+                    <div class="banner-title" id="banner-title">STALEMATE</div>
+                    <div class="banner-desc" id="banner-desc">No further synthesis possible.</div>
+                </div>
+                <button class="banner-btn" id="banner-btn" onclick="bannerAction()">RESTART</button>
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="ui ui-bottom">
                 <div class="btn-group">
-                    <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    <button id="move-left-btn" class="btn" onclick="directionalMove('left')" title="Slide Blocks Left (Relative to Camera)">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                     </button>
-                    <!-- Updated to launch confirmation modal instead of resetting instantly -->
-                    <button class="btn" onclick="promptReset()" title="Reset">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
+                    <button id="move-down-btn" class="btn" onclick="directionalMove('down')" title="Push and Merge Blocks Towards the Bottom Floor">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    </button>
+                    <button id="move-right-btn" class="btn" onclick="directionalMove('right')" title="Slide Blocks Right (Relative to Camera)">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                    <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity">
+                        <svg id="gravity-icon" class="flip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
+                        </svg>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Banner for Game Over / Zenith states -->
-        <div class="banner" id="banner">
-            <div class="banner-text">
-                <div class="banner-title" id="banner-title">STALEMATE</div>
-                <div class="banner-desc" id="banner-desc">No further synthesis possible.</div>
-            </div>
-            <button class="banner-btn" id="banner-btn" onclick="bannerAction()">RESTART</button>
-        </div>
-
-        <!-- Bottom Controls -->
-        <div class="ui ui-bottom">
-            <div class="btn-group">
-                <button id="move-left-btn" class="btn" onclick="directionalMove('left')" title="Slide Blocks Left (Relative to Camera)">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                </button>
-                <button id="move-down-btn" class="btn" onclick="directionalMove('down')" title="Push and Merge Blocks Towards the Bottom Floor">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-                </button>
-                <button id="move-right-btn" class="btn" onclick="directionalMove('right')" title="Slide Blocks Right (Relative to Camera)">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                </button>
-                <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity">
-                    <svg id="gravity-icon" class="flip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Reset Confirmation Overlay -->
-    <div id="reset-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-title">RESET GAME?</div>
-            <div class="modal-desc">Are you sure you want to start over? Your current grid and score will be lost.</div>
-            <div class="modal-actions">
-                <button class="modal-btn cancel-btn" onclick="hideResetModal()">CANCEL</button>
-                <button class="modal-btn confirm-btn" onclick="executeReset()">RESET</button>
+        <!-- Reset Confirmation Overlay -->
+        <div id="reset-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-title">RESET GAME?</div>
+                <div class="modal-desc">Are you sure you want to start over? Your current grid and score will be lost.</div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" onclick="hideResetModal()">CANCEL</button>
+                    <button class="modal-btn confirm-btn" onclick="executeReset()">RESET</button>
+                </div>
             </div>
         </div>
     </div>
@@ -253,7 +285,7 @@
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-        /* --- Modal Functions --- */
+        /* --- UI / Modal Functions --- */
         function promptReset() {
             if (isFlipping) return;
             isModalOpen = true;
@@ -345,7 +377,7 @@
         }
 
         function bannerAction() {
-            if (currentBannerType === 'stalemate') resetGame(); // No confirmation needed for stalemate reset
+            if (currentBannerType === 'stalemate') resetGame(); 
             else if (currentBannerType === 'zenith') {
                 hideBanner();
                 checkGameState();
@@ -451,13 +483,15 @@
 
         /* --- Initialization --- */
         function init() {
+            const wrapper = document.getElementById('game-wrapper');
             scene = new THREE.Scene(); 
-            scene.background = new THREE.Color(0x02040a); 
-            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 2000);
+            scene.background = null; // Let the CSS background show behind
             
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            camera = new THREE.PerspectiveCamera(35, wrapper.clientWidth / wrapper.clientHeight, 0.1, 2000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -569,10 +603,12 @@
             window.addEventListener('pointerup', (e) => endDrag(e.clientX, e.clientY));
             window.addEventListener('pointercancel', () => isDrag = false);
 
+            // Dynamically resize to wrapper (protects against ad pushing content down)
             window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
+                const wrp = document.getElementById('game-wrapper');
+                camera.aspect = wrp.clientWidth / wrp.clientHeight;
                 camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setSize(wrp.clientWidth, wrp.clientHeight);
             });
             
             window.addEventListener('keydown', (e) => {
@@ -584,7 +620,9 @@
             function loop() {
                 requestAnimationFrame(loop);
                 
-                const aspect = window.innerWidth / window.innerHeight;
+                const wrp = document.getElementById('game-wrapper');
+                const aspect = wrp.clientWidth / wrp.clientHeight;
+                
                 // Adjusted radius for a 3x3x3 grid specifically
                 const dynamicRadius = Math.max(13, 11 / aspect);
 
