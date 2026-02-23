@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>3D 2048 Cube Matrix - 3x3x3</title>
+    <title>2048 Cube 3D</title>
     <!-- Three.js Engine -->
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <style>
@@ -38,7 +38,7 @@
 
         .title-container { display: flex; flex-direction: column; text-align: left; }
         .title { font-size: 36px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; line-height: 1; }
-        .subtitle { font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; margin-top: 6px; }
+        .subtitle { font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; margin-top: 6px; text-transform: uppercase; }
         
         .right-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
 
@@ -133,8 +133,8 @@
     <div id="game-ui">
         <div class="ui ui-top">
             <div class="title-container">
-                <div class="title" id="game-title">CUBE 3x3x3</div>
-                <div class="subtitle">SYNTHESIZE IDENTICAL NEIGHBORS</div>
+                <div class="title" id="game-title">2048 CUBE 3D</div>
+                <div class="subtitle">MERGE IDENTICAL NEIGHBOURS</div>
             </div>
             <div class="right-panel">
                 <div class="score-group">
@@ -258,7 +258,7 @@
                 btn.innerText = 'CONTINUE';
             } else {
                 title.innerText = 'STALEMATE';
-                desc.innerText = 'No further synthesis possible.';
+                desc.innerText = 'No further moves possible.';
                 btn.innerText = 'RESTART';
             }
 
