@@ -100,6 +100,39 @@
         }
         .banner-btn:active { transform: scale(0.92); }
 
+        /* Reset Confirmation Modal Overlay */
+        .modal-overlay {
+            position: absolute; inset: 0; z-index: 10000;
+            background: rgba(2, 4, 15, 0.75); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1);
+            padding: 35px 30px; border-radius: 28px; text-align: center; max-width: 320px; width: 85%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
+            transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        
+        .modal-title { font-size: 22px; font-weight: 900; font-style: italic; color: white; margin-bottom: 12px; letter-spacing: 1px;}
+        .modal-desc { font-size: 13px; color: #94a3b8; margin-bottom: 30px; line-height: 1.5; font-weight: 600;}
+        .modal-actions { display: flex; gap: 12px; justify-content: center; }
+        
+        .modal-btn {
+            flex: 1; padding: 15px 0; border-radius: 16px; font-weight: 800; font-size: 13px; cursor: pointer; border: none;
+            transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .cancel-btn { background: rgba(255,255,255,0.1); color: white; }
+        .cancel-btn:hover { background: rgba(255,255,255,0.2); }
+        .confirm-btn { background: #ff3b30; color: white; }
+        .confirm-btn:hover { background: #ff453a; }
+        .modal-btn:active { transform: scale(0.95); }
+
         /* Responsive Breakpoints */
         @media (max-width: 768px) {
             .ui-top { flex-direction: column; align-items: center; gap: 15px; padding: max(15px, env(safe-area-inset-top)) 15px 15px; text-align: center; }
@@ -145,13 +178,15 @@
                     <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                     </button>
-                    <button class="btn" onclick="resetGame()" title="Reset">
+                    <!-- Updated to launch confirmation modal instead of resetting instantly -->
+                    <button class="btn" onclick="promptReset()" title="Reset">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Banner for Game Over / Zenith states -->
         <div class="banner" id="banner">
             <div class="banner-text">
                 <div class="banner-title" id="banner-title">STALEMATE</div>
@@ -160,6 +195,7 @@
             <button class="banner-btn" id="banner-btn" onclick="bannerAction()">RESTART</button>
         </div>
 
+        <!-- Bottom Controls -->
         <div class="ui ui-bottom">
             <div class="btn-group">
                 <button id="move-left-btn" class="btn" onclick="directionalMove('left')" title="Slide Blocks Left (Relative to Camera)">
@@ -176,6 +212,18 @@
                         <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
                     </svg>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Overlay -->
+    <div id="reset-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">RESET GAME?</div>
+            <div class="modal-desc">Are you sure you want to start over? Your current grid and score will be lost.</div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel-btn" onclick="hideResetModal()">CANCEL</button>
+                <button class="modal-btn confirm-btn" onclick="executeReset()">RESET</button>
             </div>
         </div>
     </div>
@@ -199,11 +247,28 @@
         let scene, camera, renderer, raycaster, mouse, cubeGroup;
         let blockMeshes = new Map(), textureCache = new Map();
         let rotX = 0.4, rotY = 0.6, isDrag = false, px = 0, py = 0, startX = 0, startY = 0;
-        let isFlipping = false, flipProgress = 0;
+        let isFlipping = false, flipProgress = 0, isModalOpen = false;
         let hasWon = false, currentBannerType = '';
         let bannerTimeout = null;
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+        /* --- Modal Functions --- */
+        function promptReset() {
+            if (isFlipping) return;
+            isModalOpen = true;
+            document.getElementById('reset-modal').classList.add('show');
+        }
+
+        function hideResetModal() {
+            isModalOpen = false;
+            document.getElementById('reset-modal').classList.remove('show');
+        }
+
+        function executeReset() {
+            hideResetModal();
+            resetGame();
+        }
 
         /* --- Storage & Persistence Functions --- */
         function saveGameState() {
@@ -280,7 +345,7 @@
         }
 
         function bannerAction() {
-            if (currentBannerType === 'stalemate') resetGame();
+            if (currentBannerType === 'stalemate') resetGame(); // No confirmation needed for stalemate reset
             else if (currentBannerType === 'zenith') {
                 hideBanner();
                 checkGameState();
@@ -471,7 +536,7 @@
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
 
             const startDrag = (x, y) => { 
-                if (isFlipping) return;
+                if (isFlipping || isModalOpen) return;
                 isDrag = true; px = x; py = y; startX = x; startY = y; 
             };
             const moveDrag = (x, y) => { 
@@ -490,7 +555,7 @@
             };
             
             const handleAction = (clientX, clientY) => {
-                if (isFlipping) return;
+                if (isFlipping || isModalOpen) return;
                 const rect = renderer.domElement.getBoundingClientRect();
                 mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
                 mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -512,7 +577,7 @@
             
             window.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoMove(); }
-                if (e.key === 'r') resetGame();
+                if (e.key === 'r') promptReset();
             });
 
             // Main Animation Render Loop
@@ -632,7 +697,7 @@
         }
 
         function directionalMove(direction) {
-            if (isFlipping) return;
+            if (isFlipping || isModalOpen) return;
             saveHistory();
             
             let changed = false;
@@ -725,7 +790,7 @@
         }
 
         function toggleGravity() {
-            if (isFlipping) return;
+            if (isFlipping || isModalOpen) return;
             saveHistory();
             isFlipping = true;
             flipProgress = 0;
@@ -747,7 +812,7 @@
         }
 
         function undoMove() {
-            if (history.length === 0 || isFlipping) return;
+            if (history.length === 0 || isFlipping || isModalOpen) return;
             const last = history.pop();
             grid = last.grid; score = last.score; moveCount = last.moveCount; 
             gravityInverted = last.iconFlipped || false;
@@ -874,7 +939,7 @@
         }
 
         function click(pos) {
-            if (isFlipping) return;
+            if (isFlipping || isModalOpen) return;
             if (!selected) { selected = pos; }
             else if (selected[0] === pos[0] && selected[1] === pos[1] && selected[2] === pos[2]) { selected = null; }
             else {
