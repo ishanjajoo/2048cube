@@ -86,6 +86,13 @@
         .flip-icon { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .notification-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; border: 2px solid #02040a; display: none; }
 
+        @keyframes pulseAlert {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+        }
+        .btn.alert { animation: pulseAlert 1.5s infinite; border-color: #ff3b30; background: rgba(255, 59, 48, 0.1); }
+
         .cost-badge {
             position: absolute;
             bottom: -8px;
@@ -285,7 +292,7 @@
                     </div>
                     <div class="btn-group">
                         <!-- Trophy / Objectives Button -->
-                        <button class="btn" onclick="openObjectives()" title="Level Objectives">
+                        <button class="btn" id="obj-btn" onclick="openObjectives()" title="Level Objectives">
                             <div class="notification-dot" id="obj-notif"></div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
@@ -390,6 +397,7 @@
         let currentLevel = 1;
         let levelStats = { gravityUses: 0, scoreEarned: 0 };
         let objectives = {};
+        window.isLevelingUp = false; // Anti-spam lock
         
         // Three.js Objects
         let scene, camera, renderer, raycaster, mouse, cubeGroup;
@@ -429,9 +437,9 @@
 
         /* --- Level & Objectives Logic --- */
         function getTileRequirements(level) {
-            if (level === 1) return[{ val: 128, count: 1 }];
-            if (level === 2) return[{ val: 256, count: 1 }];
-            if (level === 3) return[{ val: 256, count: 2 }];
+            if (level === 1) return [{ val: 128, count: 1 }];
+            if (level === 2) return [{ val: 256, count: 1 }];
+            if (level === 3) return [{ val: 256, count: 2 }];
             if (level === 4) return [{ val: 512, count: 1 }];
             if (level === 5) return [{ val: 512, count: 2 }];
             if (level === 6) return [{ val: 1024, count: 1 }];
@@ -491,11 +499,11 @@
             };
         }
 
-        function showToast(title, icon) {
+        function showToast(desc, icon) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast';
-            toast.innerHTML = `<span class="toast-icon">${icon}</span> Objective Complete!`;
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> ${desc} Completed!`;
             container.appendChild(toast);
             
             document.getElementById('obj-notif').style.display = 'block';
@@ -513,7 +521,8 @@
             // 1. Process Tile Objectives
             for (let t of objectives.tiles) {
                 if (!t.unlocked) {
-                    let countThisMove = mergedValues.filter(v => v === t.val).length;
+                    // Count how many of this specific value were created IN THIS MOVE
+                    let countThisMove = mergedValues.filter(v => Number(v) === Number(t.val)).length;
                     if (countThisMove > 0) {
                         t.current += countThisMove;
                         if (t.current >= t.target) {
@@ -557,11 +566,33 @@
                 renderObjectivesList();
             }
 
-            // Check Level Clear condition
+            // Evaluate missing objectives to pulse Trophy button
+            let completedCount = 0;
+            let totalCount = 3 + objectives.tiles.length;
+            if(objectives.moveScore.unlocked) completedCount++;
+            if(objectives.score.unlocked) completedCount++;
+            if(objectives.gravity.unlocked) completedCount++;
+            objectives.tiles.forEach(t => { if(t.unlocked) completedCount++; });
+
+            if (completedCount === totalCount - 1) {
+                document.getElementById('obj-btn').classList.add('alert');
+            } else {
+                document.getElementById('obj-btn').classList.remove('alert');
+            }
+
+            // Check Level Clear condition safely
             let allTilesCleared = objectives.tiles.every(t => t.unlocked);
             if (allTilesCleared && objectives.moveScore.unlocked && 
                 objectives.score.unlocked && objectives.gravity.unlocked) {
-                setTimeout(levelUp, 1000); // Slight delay for dramatic effect
+                
+                if (!window.isLevelingUp) {
+                    window.isLevelingUp = true;
+                    document.getElementById('obj-btn').classList.remove('alert');
+                    setTimeout(() => {
+                        levelUp();
+                        window.isLevelingUp = false;
+                    }, 1000); 
+                }
             }
         }
 
@@ -645,6 +676,7 @@
             if (isFlipping) return;
             isModalOpen = true;
             document.getElementById('obj-notif').style.display = 'none';
+            document.getElementById('obj-btn').classList.remove('alert');
             renderObjectivesList();
             document.getElementById('objectives-modal').classList.add('show');
             updateButtonStates();
@@ -719,6 +751,9 @@
                     updateLevelUI();
                     sync();
                     checkGameState();
+                    
+                    // Resume checking for alert status on load
+                    checkObjectives(0,[]);
                     return true;
                 } catch (e) {
                     console.error("Failed to load state", e);
@@ -908,7 +943,7 @@
             scene.add(dir);
 
             const starGeo = new THREE.BufferGeometry();
-            const starPos =[];
+            const starPos = [];
             const starColors =[];
             const colorObj = new THREE.Color();
             
@@ -1316,6 +1351,7 @@
             objectives = generateObjectives(1);
             
             document.getElementById('gravity-icon').style.transform = 'rotate(0deg)';
+            document.getElementById('obj-btn').classList.remove('alert');
             
             updateLevelUI();
             updateCoinUI();
@@ -1365,7 +1401,7 @@
                 m.userData.val = b.value;
             }
             
-            for (const [id, m] of blockMeshes.entries()) {
+            for (const[id, m] of blockMeshes.entries()) {
                 if (!ids.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); }
             }
             document.getElementById('score').innerText = score;
@@ -1441,7 +1477,7 @@
                     spawnBlock(); 
                     selected = null;
                     
-                    checkObjectives(v,[v]);
+                    checkObjectives(v, [v]);
 
                     if (v === 2048 && !hasWon) {
                         hasWon = true;
