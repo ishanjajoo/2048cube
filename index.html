@@ -8,12 +8,6 @@
     <!-- Google AdSense Code -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7156019979499838" crossorigin="anonymous"></script>
     
-    <!-- Vercel Web Analytics -->
-    <script>
-        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
-    
     <!-- Three.js Engine -->
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     
@@ -68,23 +62,44 @@
         }
 
         .title-container { display: flex; flex-direction: column; text-align: left; }
-        .title { font-size: 36px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; line-height: 1; }
-        .subtitle { font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; margin-top: 6px; text-transform: uppercase; }
+        .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+        .title { font-size: 32px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; line-height: 1; }
+        .level-badge { background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.4); color: #22d3ee; padding: 4px 10px; border-radius: 8px; font-weight: 900; font-size: 13px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(34,211,238,0.2); }
+        .subtitle { font-size: 9px; opacity: 0.4; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; text-transform: uppercase; }
         
         .right-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
 
         .score-group { display: flex; gap: 12px; }
-        .score-box { background: rgba(15, 23, 42, 0.4); padding: 12px 20px; border-radius: 16px; text-align: center; min-width: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
+        .score-box { background: rgba(15, 23, 42, 0.4); padding: 12px 20px; border-radius: 16px; text-align: center; min-width: 90px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); }
+        .score-box.gold { border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.05); }
         .label { font-size: 9px; text-transform: uppercase; opacity: 0.6; letter-spacing: 2px; font-weight: 900; margin-bottom: 2px; color: #94a3b8; }
+        .score-box.gold .label { color: #fbbf24; opacity: 0.8; }
         .value { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; color: white; }
+        .score-box.gold .value { color: #fbbf24; }
 
-        .btn-group { display: flex; gap: 10px; pointer-events: auto; align-items: center; }
-        .btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 50%; cursor: pointer; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
-        .btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
-        .btn:active { transform: translateY(0); scale: 0.95; }
-        .btn:disabled { opacity: 0.1; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-group { display: flex; gap: 10px; pointer-events: auto; align-items: center; margin-bottom: 8px; }
+        .btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 12px; border-radius: 50%; cursor: pointer; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; position: relative;}
+        .btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .btn:active:not(:disabled) { transform: translateY(0); scale: 0.95; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; border-color: rgba(255,255,255,0.05); }
         
         .flip-icon { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .notification-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; border: 2px solid #02040a; display: none; }
+
+        .cost-badge {
+            position: absolute;
+            bottom: -8px;
+            background: #fbbf24;
+            color: #02040a;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 6px;
+            pointer-events: none;
+            border: 2px solid #02040a;
+            z-index: 20;
+            letter-spacing: 0.5px;
+        }
 
         /* Floating Banner */
         .banner {
@@ -117,12 +132,14 @@
         
         .banner-text { display: flex; flex-direction: column; align-items: flex-start; }
         .banner-title { font-size: 18px; font-weight: 900; font-style: italic; letter-spacing: 1px; line-height: 1.2; }
-        .banner-desc { font-size: 12px; opacity: 0.7; font-weight: 600; white-space: nowrap; margin-top: 4px; }
+        .banner-desc { font-size: 12px; opacity: 0.7; font-weight: 600; white-space: normal; margin-top: 4px; }
         
         .banner.stalemate { border-color: rgba(255, 60, 60, 0.5); }
         .banner.stalemate .banner-title { color: #ff3b30; }
         .banner.zenith { border-color: rgba(34, 211, 238, 0.5); }
         .banner.zenith .banner-title { color: #22d3ee; }
+        .banner.levelup { border-color: rgba(167, 139, 250, 0.5); }
+        .banner.levelup .banner-title { color: #a78bfa; }
 
         .banner-btn {
             background: white; color: #020617; border: none; padding: 14px 28px;
@@ -170,35 +187,36 @@
             display: flex; flex-direction: column;
         }
         .objectives-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px; }
-        .objectives-header .modal-title { margin-bottom: 0; }
-        .close-btn { background: none; border: none; color: white; opacity: 0.6; cursor: pointer; font-size: 24px; padding: 0; }
+        .objectives-header .modal-title { margin-bottom: 0; color: #a78bfa; }
+        .close-btn { background: none; border: none; color: white; opacity: 0.6; cursor: pointer; font-size: 28px; padding: 0; line-height: 1; }
         .close-btn:hover { opacity: 1; }
         
         .objectives-list {
             overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
             padding-right: 10px; margin-bottom: 10px; flex: 1;
         }
-        /* Custom Scrollbar for Objectives */
         .objectives-list::-webkit-scrollbar { width: 6px; }
         .objectives-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
         .objectives-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
         .obj-item {
-            display: flex; align-items: center; gap: 15px; padding: 12px 15px;
+            display: flex; align-items: center; gap: 15px; padding: 14px 18px;
             background: rgba(255,255,255,0.03); border-radius: 16px;
             border: 1px solid rgba(255,255,255,0.05); text-align: left;
-            opacity: 0.5; transition: all 0.3s;
+            opacity: 0.6; transition: all 0.3s;
         }
         .obj-item.unlocked {
-            opacity: 1; border-color: rgba(34, 211, 238, 0.4);
-            background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+            opacity: 1; border-color: rgba(167, 139, 250, 0.4);
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         .obj-icon { font-size: 24px; filter: grayscale(100%); transition: all 0.3s; }
         .obj-item.unlocked .obj-icon { filter: grayscale(0%); transform: scale(1.1); }
         .obj-text { flex: 1; }
-        .obj-title { font-size: 14px; font-weight: 800; color: white; margin-bottom: 4px; }
-        .obj-item.unlocked .obj-title { color: #22d3ee; }
+        .obj-title { font-size: 14px; font-weight: 800; color: white; margin-bottom: 4px; display: flex; justify-content: space-between;}
+        .obj-progress { font-size: 11px; opacity: 0.7; font-weight: 700; color: white; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 6px;}
+        .obj-item.unlocked .obj-title { color: #a78bfa; }
+        .obj-item.unlocked .obj-progress { display: none; }
         .obj-desc { font-size: 11px; color: #94a3b8; font-weight: 600; line-height: 1.3;}
 
         /* Toast Notifications */
@@ -210,7 +228,7 @@
             background: rgba(15, 23, 42, 0.95); color: white; padding: 14px 24px;
             border-radius: 20px; font-weight: 700; font-size: 13px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid rgba(34, 211, 238, 0.4);
+            border: 1px solid rgba(167, 139, 250, 0.4);
             display: flex; align-items: center; gap: 12px;
             animation: slideInDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             transition: opacity 0.4s ease, transform 0.4s ease;
@@ -225,9 +243,9 @@
         @media (max-width: 768px) {
             .ui-top { flex-direction: column; align-items: center; gap: 15px; padding: max(15px, env(safe-area-inset-top)) 15px 15px; text-align: center; }
             .right-panel { align-items: center; width: 100%; gap: 12px; }
-            .title-container { text-align: center; }
+            .title-row { justify-content: center; }
             .title { font-size: 28px; }
-            .score-box { min-width: 70px; padding: 10px 15px; }
+            .score-box { min-width: 65px; padding: 10px 12px; }
             .value { font-size: 20px; }
             .ui-bottom { padding: 15px 15px max(15px, env(safe-area-inset-bottom)); }
             
@@ -236,7 +254,6 @@
                 padding: 24px; border-radius: 30px; text-align: center; 
             }
             .banner-text { align-items: center; }
-            .banner-desc { white-space: normal; }
             .banner-btn { width: 100%; padding: 16px; font-size: 14px; }
         }
     </style>
@@ -254,17 +271,22 @@
         <div id="game-ui">
             <div class="ui ui-top">
                 <div class="title-container">
-                    <div class="title" id="game-title">2048 CUBE 3D</div>
+                    <div class="title-row">
+                        <div class="title" id="game-title">2048 CUBE 3D</div>
+                        <div class="level-badge" id="level-display">LVL 1</div>
+                    </div>
                     <div class="subtitle">Click or Slide to merge identical boxes</div>
                 </div>
                 <div class="right-panel">
                     <div class="score-group">
+                        <div class="score-box gold"><div class="label">Coins</div><div class="value" id="coins-display">🪙 0</div></div>
                         <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
                         <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
                     </div>
                     <div class="btn-group">
                         <!-- Trophy / Objectives Button -->
-                        <button class="btn" onclick="openObjectives()" title="Objectives">
+                        <button class="btn" onclick="openObjectives()" title="Level Objectives">
+                            <div class="notification-dot" id="obj-notif"></div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
                                 <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
@@ -274,10 +296,11 @@
                                 <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
                             </svg>
                         </button>
-                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo">
+                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 1 Coin)">
+                            <div class="cost-badge">🪙</div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                         </button>
-                        <button class="btn" onclick="promptReset()" title="Reset">
+                        <button class="btn" onclick="promptReset()" title="Reset Game">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
                         </button>
                     </div>
@@ -294,7 +317,7 @@
 
             <!-- Bottom Controls -->
             <div class="ui ui-bottom">
-                <div class="btn-group">
+                <div class="btn-group" style="margin-bottom: 5px;">
                     <button id="move-left-btn" class="btn" onclick="directionalMove('left')" title="Slide Blocks Left (Relative to Camera)">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                     </button>
@@ -304,7 +327,8 @@
                     <button id="move-right-btn" class="btn" onclick="directionalMove('right')" title="Slide Blocks Right (Relative to Camera)">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
-                    <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity">
+                    <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity (Cost: 1 Coin)">
+                        <div class="cost-badge">🪙</div>
                         <svg id="gravity-icon" class="flip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
                         </svg>
@@ -317,7 +341,7 @@
         <div id="reset-modal" class="modal-overlay">
             <div class="modal-content">
                 <div class="modal-title">RESET GAME?</div>
-                <div class="modal-desc">Are you sure you want to start over? Your current grid and score will be lost.</div>
+                <div class="modal-desc">Are you sure you want to start over? Your grid, score, and level progress will be lost. Coins will be saved.</div>
                 <div class="modal-actions">
                     <button class="modal-btn cancel-btn" onclick="hideResetModal()">CANCEL</button>
                     <button class="modal-btn confirm-btn" onclick="executeReset()">RESET</button>
@@ -329,7 +353,7 @@
         <div id="objectives-modal" class="modal-overlay">
             <div class="modal-content">
                 <div class="objectives-header">
-                    <div class="modal-title">OBJECTIVES</div>
+                    <div class="modal-title" id="modal-level-title">OBJECTIVES - LEVEL 1</div>
                     <button class="close-btn" onclick="closeObjectives()">×</button>
                 </div>
                 <div class="objectives-list" id="objectives-list">
@@ -353,9 +377,19 @@
         };
         
         // State Variables
-        let grid = [], score = 0, best = localStorage.getItem('cube2048_3x3_best') || 0;
-        let history = [], moveCount = 0;
+        let grid =[], score = 0, best = localStorage.getItem('cube2048_3x3_best') || 0;
+        let history =[], moveCount = 0;
         let selected = null, gravityInverted = false; 
+        
+        // Economy & Anti-Glitch Trackers
+        let totalCoins = parseInt(localStorage.getItem('cube2048_coins')) || 0;
+        let coinProgress = parseInt(localStorage.getItem('cube2048_coin_progress')) || 0;
+        let highestScoreThisGame = 0; 
+
+        // Level & Objective System
+        let currentLevel = 1;
+        let levelStats = { gravityUses: 0, scoreEarned: 0 };
+        let objectives = {};
         
         // Three.js Objects
         let scene, camera, renderer, raycaster, mouse, cubeGroup;
@@ -367,46 +401,105 @@
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
-        /* --- Objectives & Achievements Logic --- */
-        let objectives = {
-            obj_4: { title: "First Synthesis", desc: "Create a 4 tile.", unlocked: false, icon: "🔢" },
-            obj_16: { title: "Moving Up", desc: "Create a 16 tile.", unlocked: false, icon: "🚀" },
-            obj_64: { title: "Cube Architect", desc: "Create a 64 tile.", unlocked: false, icon: "🏗️" },
-            obj_256: { title: "Halfway There", desc: "Create a 256 tile.", unlocked: false, icon: "🌓" },
-            obj_512: { title: "The 512 Tile", desc: "Create a 512 tile.", unlocked: false, icon: "🔥" },
-            obj_1024: { title: "1K Club", desc: "Create a 1024 tile.", unlocked: false, icon: "✨" },
-            obj_2048: { title: "Zenith", desc: "Create the 2048 tile.", unlocked: false, icon: "👑" },
-            obj_score_10: { title: "Combo Starter", desc: "Score 10+ points in one move.", unlocked: false, icon: "⚡" },
-            obj_score_50: { title: "Chain Reaction", desc: "Score 50+ points in one move.", unlocked: false, icon: "💥" },
-            obj_score_100: { title: "Mega Merge", desc: "Score 100+ points in one move.", unlocked: false, icon: "🤯" },
-            obj_total_5000: { title: "Veteran", desc: "Reach 5,000 total score.", unlocked: false, icon: "🏅" },
-            obj_gravity_5: { title: "Gravity Master", desc: "Use invert gravity 5 times in one game.", unlocked: false, icon: "🌀" }
-        };
-        let sessionStats = { gravityUses: 0 };
-
-        function loadObjectives() {
-            const saved = localStorage.getItem('cube2048_objectives');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    for (let key in parsed) {
-                        if (objectives[key]) objectives[key].unlocked = parsed[key].unlocked;
-                    }
-                } catch(e) { console.error("Error loading objectives", e); }
+        /* --- Economy Functions --- */
+        function addCoinsFromScore(points) {
+            coinProgress += points;
+            let newCoins = Math.floor(coinProgress / 100);
+            if (newCoins > 0) {
+                totalCoins += newCoins;
+                coinProgress = coinProgress % 100;
+                localStorage.setItem('cube2048_coins', totalCoins);
+                localStorage.setItem('cube2048_coin_progress', coinProgress);
+                updateCoinUI();
             }
         }
 
-        function saveObjectives() {
-            localStorage.setItem('cube2048_objectives', JSON.stringify(objectives));
+        function updateCoinUI() {
+            document.getElementById('coins-display').innerText = '🪙 ' + totalCoins;
+            updateButtonStates();
+        }
+
+        function updateButtonStates() {
+            const undoBtn = document.getElementById('undo-btn');
+            const gravBtn = document.getElementById('gravity-btn');
+            
+            undoBtn.disabled = (history.length === 0 || totalCoins < 1 || isFlipping || isModalOpen);
+            gravBtn.disabled = (totalCoins < 1 || isFlipping || isModalOpen);
+        }
+
+        /* --- Level & Objectives Logic --- */
+        function getTileRequirements(level) {
+            if (level === 1) return[{ val: 128, count: 1 }];
+            if (level === 2) return[{ val: 256, count: 1 }];
+            if (level === 3) return[{ val: 256, count: 2 }];
+            if (level === 4) return [{ val: 512, count: 1 }];
+            if (level === 5) return [{ val: 512, count: 2 }];
+            if (level === 6) return [{ val: 1024, count: 1 }];
+            if (level === 7) return [{ val: 1024, count: 2 }];
+            
+            // Level 8 onwards: always require at least 1x 2048
+            let reqs =[{ val: 2048, count: 1 }];
+            if (level === 8) return reqs;
+
+            // Level 9-100: Add progressively scaling secondary targets
+            const secondaryVals =[128, 256, 512, 1024, 2048, 4096, 8192];
+            let offset = level - 9; 
+            let valIndex = Math.floor(offset / 3) % secondaryVals.length;
+            let countSequence = (offset % 3) + 1; // Count oscillates: 1, 2, 3
+
+            let secVal = secondaryVals[valIndex];
+            let secCount = countSequence;
+
+            if (secVal === 2048) {
+                reqs[0].count += secCount; // Merge counts if it targets 2048
+            } else {
+                reqs.push({ val: secVal, count: secCount });
+            }
+            
+            // Introduce a tertiary requirement every 20 levels for extra spice
+            if (level >= 30) {
+                let tertVal = secondaryVals[(valIndex + 2) % secondaryVals.length];
+                let tertCount = (offset % 2) + 1;
+                let existing = reqs.find(r => r.val === tertVal);
+                if (existing) existing.count += tertCount;
+                else reqs.push({ val: tertVal, count: tertCount });
+            }
+
+            return reqs.sort((a, b) => b.val - a.val);
+        }
+
+        // Procedurally generate the full objective suite for the current level
+        function generateObjectives(level) {
+            let tiles = getTileRequirements(level).map(t => ({
+                val: t.val,
+                target: t.count,
+                current: 0,
+                unlocked: false,
+                desc: `Synthesize ${t.count}x [${t.val}] tile${t.count > 1 ? 's' : ''}`,
+                icon: "👑"
+            }));
+
+            const tMoveScore = Math.floor(10 * Math.pow(1.05, level - 1));
+            const tScore = Math.floor(250 * Math.pow(1.12, level - 1));
+            const tGrav = Math.floor((level - 1) / 4) + 1;
+
+            return {
+                tiles: tiles,
+                moveScore: { target: tMoveScore, unlocked: false, desc: `Score ${tMoveScore}+ points in one move`, icon: "💥" },
+                score: { target: tScore, unlocked: false, desc: `Earn ${tScore} score this level`, icon: "🏅" },
+                gravity: { target: tGrav, unlocked: false, desc: `Use invert gravity ${tGrav} time${tGrav > 1 ? 's' : ''}`, icon: "🌀" }
+            };
         }
 
         function showToast(title, icon) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast';
-            toast.innerHTML = `<span class="toast-icon">${icon}</span> Unlocked: ${title}`;
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> Objective Complete!`;
             container.appendChild(toast);
             
+            document.getElementById('obj-notif').style.display = 'block';
+
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(-20px) scale(0.9)';
@@ -414,78 +507,167 @@
             }, 3000);
         }
 
-        function checkObjectives(moveScore = 0, maxValueCreated = 0) {
+        function checkObjectives(moveScore = 0, mergedValues =[]) {
             let unlockedAny = false;
             
-            const checkAndUnlock = (id) => {
-                if (!objectives[id].unlocked) {
-                    objectives[id].unlocked = true;
-                    showToast(objectives[id].title, objectives[id].icon);
-                    unlockedAny = true;
+            // 1. Process Tile Objectives
+            for (let t of objectives.tiles) {
+                if (!t.unlocked) {
+                    let countThisMove = mergedValues.filter(v => v === t.val).length;
+                    if (countThisMove > 0) {
+                        t.current += countThisMove;
+                        if (t.current >= t.target) {
+                            t.current = t.target; // cap visually
+                            t.unlocked = true;
+                            showToast(t.desc, t.icon);
+                            unlockedAny = true;
+                        } else {
+                            unlockedAny = true; // Trigger UI progress update
+                        }
+                    }
                 }
-            };
+            }
+            
+            // 2. Move Score
+            if (!objectives.moveScore.unlocked && moveScore >= objectives.moveScore.target) {
+                objectives.moveScore.unlocked = true;
+                showToast(objectives.moveScore.desc, objectives.moveScore.icon);
+                unlockedAny = true;
+            }
+            
+            // 3. Level Score
+            if (!objectives.score.unlocked) {
+                if (levelStats.scoreEarned >= objectives.score.target) {
+                    objectives.score.unlocked = true;
+                    showToast(objectives.score.desc, objectives.score.icon);
+                    unlockedAny = true;
+                } else if (moveScore > 0) {
+                    unlockedAny = true; // trigger progress update
+                }
+            }
+            
+            // 4. Gravity
+            if (!objectives.gravity.unlocked && levelStats.gravityUses >= objectives.gravity.target) {
+                objectives.gravity.unlocked = true;
+                showToast(objectives.gravity.desc, objectives.gravity.icon);
+                unlockedAny = true;
+            }
 
-            if (maxValueCreated >= 4) checkAndUnlock("obj_4");
-            if (maxValueCreated >= 16) checkAndUnlock("obj_16");
-            if (maxValueCreated >= 64) checkAndUnlock("obj_64");
-            if (maxValueCreated >= 256) checkAndUnlock("obj_256");
-            if (maxValueCreated >= 512) checkAndUnlock("obj_512");
-            if (maxValueCreated >= 1024) checkAndUnlock("obj_1024");
-            if (maxValueCreated >= 2048) checkAndUnlock("obj_2048");
-
-            if (moveScore >= 10) checkAndUnlock("obj_score_10");
-            if (moveScore >= 50) checkAndUnlock("obj_score_50");
-            if (moveScore >= 100) checkAndUnlock("obj_score_100");
-
-            if (score >= 5000) checkAndUnlock("obj_total_5000");
-            if (sessionStats.gravityUses >= 5) checkAndUnlock("obj_gravity_5");
-
-            if (unlockedAny) {
-                saveObjectives();
+            if (unlockedAny && isModalOpen) {
                 renderObjectivesList();
             }
+
+            // Check Level Clear condition
+            let allTilesCleared = objectives.tiles.every(t => t.unlocked);
+            if (allTilesCleared && objectives.moveScore.unlocked && 
+                objectives.score.unlocked && objectives.gravity.unlocked) {
+                setTimeout(levelUp, 1000); // Slight delay for dramatic effect
+            }
+        }
+
+        function levelUp() {
+            currentLevel++;
+            levelStats = { gravityUses: 0, scoreEarned: 0 };
+            objectives = generateObjectives(currentLevel);
+            
+            updateLevelUI();
+            showBanner('levelup');
+            saveGameState();
+        }
+
+        function updateLevelUI() {
+            document.getElementById('level-display').innerText = `LVL ${currentLevel}`;
+            document.getElementById('modal-level-title').innerText = `OBJECTIVES - LEVEL ${currentLevel}`;
         }
 
         function renderObjectivesList() {
             const list = document.getElementById('objectives-list');
             list.innerHTML = '';
-            for (let key in objectives) {
-                const obj = objectives[key];
+            
+            // Render Tile Requirements
+            objectives.tiles.forEach(t => {
                 const div = document.createElement('div');
-                div.className = `obj-item ${obj.unlocked ? 'unlocked' : ''}`;
+                div.className = `obj-item ${t.unlocked ? 'unlocked' : ''}`;
+                let progressText = t.unlocked ? '' : `(${t.current} / ${t.target})`;
                 div.innerHTML = `
-                    <div class="obj-icon">${obj.icon}</div>
+                    <div class="obj-icon">${t.icon}</div>
                     <div class="obj-text">
-                        <div class="obj-title">${obj.title}</div>
-                        <div class="obj-desc">${obj.desc}</div>
+                        <div class="obj-title">
+                            <span>TILE SYNTHESIS</span>
+                            ${progressText ? `<span class="obj-progress">${progressText}</span>` : ''}
+                        </div>
+                        <div class="obj-desc">${t.desc}</div>
                     </div>
                 `;
                 list.appendChild(div);
-            }
+            });
+
+            // Render Move Score
+            let msObj = objectives.moveScore;
+            list.innerHTML += `
+                <div class="obj-item ${msObj.unlocked ? 'unlocked' : ''}">
+                    <div class="obj-icon">${msObj.icon}</div>
+                    <div class="obj-text">
+                        <div class="obj-title"><span>SINGLE MOVE</span></div>
+                        <div class="obj-desc">${msObj.desc}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Render Level Score
+            let sObj = objectives.score;
+            let sProg = sObj.unlocked ? '' : `<span class="obj-progress">(${levelStats.scoreEarned} / ${sObj.target})</span>`;
+            list.innerHTML += `
+                <div class="obj-item ${sObj.unlocked ? 'unlocked' : ''}">
+                    <div class="obj-icon">${sObj.icon}</div>
+                    <div class="obj-text">
+                        <div class="obj-title"><span>TOTAL SCORE</span>${sProg}</div>
+                        <div class="obj-desc">${sObj.desc}</div>
+                    </div>
+                </div>
+            `;
+
+            // Render Gravity
+            let gObj = objectives.gravity;
+            let gProg = gObj.unlocked ? '' : `<span class="obj-progress">(${levelStats.gravityUses} / ${gObj.target})</span>`;
+            list.innerHTML += `
+                <div class="obj-item ${gObj.unlocked ? 'unlocked' : ''}">
+                    <div class="obj-icon">${gObj.icon}</div>
+                    <div class="obj-text">
+                        <div class="obj-title"><span>GRAVITY SHIFT</span>${gProg}</div>
+                        <div class="obj-desc">${gObj.desc}</div>
+                    </div>
+                </div>
+            `;
         }
 
         function openObjectives() {
             if (isFlipping) return;
             isModalOpen = true;
+            document.getElementById('obj-notif').style.display = 'none';
             renderObjectivesList();
             document.getElementById('objectives-modal').classList.add('show');
+            updateButtonStates();
         }
 
         function closeObjectives() {
             isModalOpen = false;
             document.getElementById('objectives-modal').classList.remove('show');
+            updateButtonStates();
         }
 
-        /* --- UI / Modal Functions --- */
+        /* --- UI / Reset Modal Functions --- */
         function promptReset() {
             if (isFlipping) return;
             isModalOpen = true;
             document.getElementById('reset-modal').classList.add('show');
+            updateButtonStates();
         }
 
         function hideResetModal() {
             isModalOpen = false;
             document.getElementById('reset-modal').classList.remove('show');
+            updateButtonStates();
         }
 
         function executeReset() {
@@ -502,7 +684,10 @@
                 gravityInverted: gravityInverted,
                 hasWon: hasWon,
                 history: history,
-                sessionStats: sessionStats
+                currentLevel: currentLevel,
+                levelStats: levelStats,
+                objectives: objectives,
+                highestScoreThisGame: highestScoreThisGame
             };
             localStorage.setItem('cube2048_3x3_state', JSON.stringify(state));
         }
@@ -517,12 +702,21 @@
                     moveCount = state.moveCount;
                     gravityInverted = state.gravityInverted || false;
                     hasWon = state.hasWon || false;
-                    history = state.history || [];
-                    sessionStats = state.sessionStats || { gravityUses: 0 };
+                    history = state.history ||[];
+                    
+                    currentLevel = state.currentLevel || 1;
+                    levelStats = state.levelStats || { gravityUses: 0, scoreEarned: 0 };
+                    highestScoreThisGame = state.highestScoreThisGame || 0;
+                    
+                    if (state.objectives && state.objectives.tiles) {
+                        objectives = state.objectives;
+                    } else {
+                        objectives = generateObjectives(currentLevel);
+                    }
                     
                     document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-                    document.getElementById('undo-btn').disabled = history.length === 0;
                     
+                    updateLevelUI();
                     sync();
                     checkGameState();
                     return true;
@@ -546,6 +740,10 @@
                 title.innerText = 'ZENITH';
                 desc.innerText = 'Ultimate cube synthesized.';
                 btn.innerText = 'CONTINUE';
+            } else if (type === 'levelup') {
+                title.innerText = 'LEVEL CLEARED!';
+                desc.innerText = `Welcome to Level ${currentLevel}. New objectives added.`;
+                btn.innerText = 'CONTINUE';
             } else {
                 title.innerText = 'STALEMATE';
                 desc.innerText = 'No further moves possible.';
@@ -559,7 +757,7 @@
                 if (currentBannerType === type) {
                     banner.classList.add('interactive');
                 }
-            }, 1500); 
+            }, 1000); 
         }
 
         function hideBanner() {
@@ -571,7 +769,7 @@
 
         function bannerAction() {
             if (currentBannerType === 'stalemate') resetGame(); 
-            else if (currentBannerType === 'zenith') {
+            else if (currentBannerType === 'zenith' || currentBannerType === 'levelup') {
                 hideBanner();
                 checkGameState();
             }
@@ -588,7 +786,7 @@
                         }
                         const c = grid[x][y][z];
                         const ns = [[x+1,y,z],[x,y+1,z],[x,y,z+1]];
-                        for (const [nx,ny,nz] of ns) {
+                        for (const[nx,ny,nz] of ns) {
                             if (nx < GRID_SIZE && ny < GRID_SIZE && nz < GRID_SIZE && grid[nx][ny][nz] && grid[nx][ny][nz].value === c.value) {
                                 canMove = true;
                                 break;
@@ -601,8 +799,11 @@
                 if (canMove) break;
             }
             
-            if (!canMove && currentBannerType !== 'zenith') showBanner('stalemate');
-            else if (canMove && currentBannerType === 'stalemate') hideBanner();
+            if (!canMove && currentBannerType !== 'zenith' && currentBannerType !== 'levelup') {
+                showBanner('stalemate');
+            } else if (canMove && currentBannerType === 'stalemate') {
+                hideBanner();
+            }
         }
 
         /* --- Procedural Textures Generation --- */
@@ -694,7 +895,6 @@
             cubeGroup = new THREE.Group();
             scene.add(cubeGroup);
 
-            // Lighting setup
             scene.add(new THREE.AmbientLight(0xffffff, 0.5));
             scene.add(new THREE.HemisphereLight(0x8080ff, 0x202040, 0.8)); 
             
@@ -707,10 +907,9 @@
             dir.shadow.radius = 6;
             scene.add(dir);
 
-            // Bright, Colorful Starfield
             const starGeo = new THREE.BufferGeometry();
-            const starPos = [];
-            const starColors = [];
+            const starPos =[];
+            const starColors =[];
             const colorObj = new THREE.Color();
             
             for(let i = 0; i < 8000; i++) {
@@ -738,8 +937,7 @@
             });
             scene.add(new THREE.Points(starGeo, starMat));
 
-            // Ambient Nebula Clouds
-            const nebulaColors = [0x8a2be2, 0x4169e1, 0xff1493, 0x00ced1]; 
+            const nebulaColors =[0x8a2be2, 0x4169e1, 0xff1493, 0x00ced1]; 
             const nebulaGroup = new THREE.Group();
             for(let i = 0; i < 20; i++) {
                 const color = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
@@ -759,7 +957,6 @@
             }
             scene.add(nebulaGroup);
 
-            // Interaction Event Listeners
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
 
             const startDrag = (x, y) => { 
@@ -796,7 +993,6 @@
             window.addEventListener('pointerup', (e) => endDrag(e.clientX, e.clientY));
             window.addEventListener('pointercancel', () => isDrag = false);
 
-            // Dynamically resize to wrapper
             window.addEventListener('resize', () => {
                 const wrp = document.getElementById('game-wrapper');
                 camera.aspect = wrp.clientWidth / wrp.clientHeight;
@@ -809,7 +1005,6 @@
                 if (e.key === 'r') promptReset();
             });
 
-            // Main Animation Render Loop
             function loop() {
                 requestAnimationFrame(loop);
                 
@@ -860,8 +1055,7 @@
                             }
                         }
                         grid = newGrid;
-                        document.getElementById('gravity-btn').disabled = false;
-                        
+                        updateButtonStates();
                         applyGravity();
                         sync();
                         checkGameState();
@@ -878,11 +1072,8 @@
             loop();
         }
 
-        /* 
-         * Camera-Relative Axis Mapper
-         */
         function getScreenMappedDirection(screenDir) {
-            const axes = [
+            const axes =[
                 { axis: 'x', dir: 1, vec: new THREE.Vector3(1, 0, 0) },
                 { axis: 'x', dir: -1, vec: new THREE.Vector3(-1, 0, 0) },
                 { axis: 'z', dir: 1, vec: new THREE.Vector3(0, 0, 1) },
@@ -906,8 +1097,9 @@
         }
 
         function slideLine(line) {
-            let newLine = [];
+            let newLine =[];
             let scoreGained = 0;
+            let mergedValues =[];
             let maxVal = 0;
             let filtered = line.filter(b => b !== null);
             let i = 0;
@@ -916,6 +1108,7 @@
                     let val = filtered[i].value * 2;
                     scoreGained += val;
                     maxVal = Math.max(maxVal, val);
+                    mergedValues.push(val);
                     newLine.push({ id: filtered[i].id, value: val }); 
                     i += 2;
                 } else {
@@ -924,7 +1117,7 @@
                 }
             }
             while (newLine.length < GRID_SIZE) newLine.push(null);
-            return { newLine, scoreGained, maxVal };
+            return { newLine, scoreGained, maxVal, mergedValues };
         }
 
         function directionalMove(direction) {
@@ -934,17 +1127,19 @@
             let changed = false;
             let moveScore = 0;
             let moveMaxVal = 0;
+            let moveMergedVals =[];
             
             if (direction === 'down') {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     for (let z = 0; z < GRID_SIZE; z++) {
-                        let line = [];
+                        let line =[];
                         for (let y = 0; y < GRID_SIZE; y++) line.push(grid[x][y][z]);
                         
                         let res = slideLine(line);
                         let newLine = res.newLine;
                         moveScore += res.scoreGained;
                         moveMaxVal = Math.max(moveMaxVal, res.maxVal);
+                        moveMergedVals.push(...res.mergedValues);
                         
                         for (let y = 0; y < GRID_SIZE; y++) {
                             if (grid[x][y][z] !== newLine[y]) changed = true;
@@ -959,15 +1154,17 @@
                 for (let y = 0; y < GRID_SIZE; y++) {
                     if (match.axis === 'x') {
                         for (let z = 0; z < GRID_SIZE; z++) {
-                            let line = [];
+                            let line =[];
                             for (let x = 0; x < GRID_SIZE; x++) line.push(grid[x][y][z]);
                             
                             if (match.dir === 1) line.reverse(); 
                             let res = slideLine(line);
                             let newLine = res.newLine;
                             if (match.dir === 1) newLine.reverse();
+                            
                             moveScore += res.scoreGained;
                             moveMaxVal = Math.max(moveMaxVal, res.maxVal);
+                            moveMergedVals.push(...res.mergedValues);
                             
                             for (let x = 0; x < GRID_SIZE; x++) {
                                 if (grid[x][y][z] !== newLine[x]) changed = true;
@@ -977,15 +1174,17 @@
                         }
                     } else if (match.axis === 'z') {
                         for (let x = 0; x < GRID_SIZE; x++) {
-                            let line = [];
+                            let line =[];
                             for (let z = 0; z < GRID_SIZE; z++) line.push(grid[x][y][z]);
                             
                             if (match.dir === 1) line.reverse(); 
                             let res = slideLine(line);
                             let newLine = res.newLine;
                             if (match.dir === 1) newLine.reverse();
+                            
                             moveScore += res.scoreGained;
                             moveMaxVal = Math.max(moveMaxVal, res.maxVal);
+                            moveMergedVals.push(...res.mergedValues);
                             
                             for (let z = 0; z < GRID_SIZE; z++) {
                                 if (grid[x][y][z] !== newLine[z]) changed = true;
@@ -1000,11 +1199,18 @@
             if (changed) {
                 applyGravity(); 
                 moveCount++;
-                spawnBlock(); // New block falls after every move
+                levelStats.scoreEarned += moveScore;
+                
+                spawnBlock(); 
                 
                 if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best', best); }
+                if (score > highestScoreThisGame) {
+                    addCoinsFromScore(score - highestScoreThisGame);
+                    highestScoreThisGame = score;
+                }
+
                 sync();
-                checkObjectives(moveScore, moveMaxVal);
+                checkObjectives(moveScore, moveMergedVals);
                 
                 let zenithFound = false;
                 for (let x = 0; x < GRID_SIZE; x++) {
@@ -1029,16 +1235,24 @@
         }
 
         function toggleGravity() {
-            if (isFlipping || isModalOpen) return;
-            saveHistory();
+            if (isFlipping || isModalOpen || totalCoins < 1) return;
+            
+            saveHistory(); 
+
+            // Deduct Fee
+            totalCoins -= 1;
+            localStorage.setItem('cube2048_coins', totalCoins);
+            updateCoinUI();
+
             isFlipping = true;
             flipProgress = 0;
             gravityInverted = !gravityInverted;
             document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-            document.getElementById('gravity-btn').disabled = true;
+            updateButtonStates();
             
-            sessionStats.gravityUses++;
-            checkObjectives(0, 0);
+            // Objective Tracking
+            levelStats.gravityUses++;
+            checkObjectives(0,[]);
         }
 
         function saveHistory() {
@@ -1048,25 +1262,35 @@
                 score: score, 
                 moveCount: moveCount, 
                 iconFlipped: gravityInverted,
-                sessionStats: { ...sessionStats }
+                levelStats: { ...levelStats },
+                objectives: JSON.parse(JSON.stringify(objectives)),
+                currentLevel: currentLevel
             });
             if (history.length > 30) history.shift();
-            document.getElementById('undo-btn').disabled = false;
+            updateButtonStates();
         }
 
         function undoMove() {
-            if (history.length === 0 || isFlipping || isModalOpen) return;
+            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 1) return;
+            
+            // Deduct Fee
+            totalCoins -= 1;
+            localStorage.setItem('cube2048_coins', totalCoins);
+
             const last = history.pop();
             grid = last.grid; 
             score = last.score; 
             moveCount = last.moveCount; 
             gravityInverted = last.iconFlipped || false;
-            sessionStats = last.sessionStats || { gravityUses: 0 };
+            levelStats = last.levelStats || { gravityUses: 0, scoreEarned: 0 };
+            objectives = last.objectives || generateObjectives(currentLevel);
+            currentLevel = last.currentLevel || 1;
             selected = null;
             
             document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
             
-            if (history.length === 0) document.getElementById('undo-btn').disabled = true;
+            updateLevelUI();
+            updateCoinUI();
             sync();
             checkGameState();
             saveGameState();
@@ -1078,20 +1302,24 @@
                 const r = Math.random(); 
                 grid[x][y][z] = { id: Math.random().toString(36).substr(2, 9), value: r > 0.9 ? 8 : r > 0.7 ? 4 : 2 };
             }
-            score = 0; moveCount = 0; selected = null; history = [];
+            score = 0; moveCount = 0; selected = null; history =[];
+            highestScoreThisGame = 0; 
             
             isFlipping = false;
             flipProgress = 0;
             if (cubeGroup) cubeGroup.rotation.z = 0;
             gravityInverted = false;
             hasWon = false;
-            sessionStats = { gravityUses: 0 };
+            
+            currentLevel = 1;
+            levelStats = { gravityUses: 0, scoreEarned: 0 };
+            objectives = generateObjectives(1);
             
             document.getElementById('gravity-icon').style.transform = 'rotate(0deg)';
-            document.getElementById('gravity-btn').disabled = false;
-            document.getElementById('undo-btn').disabled = true;
-            hideBanner();
             
+            updateLevelUI();
+            updateCoinUI();
+            hideBanner();
             applyGravity(); 
             sync();
             saveGameState();
@@ -1106,7 +1334,7 @@
                 let m = blockMeshes.get(b.id);
                 
                 if (!m) {
-                    const materials = [];
+                    const materials =[];
                     const tex = createTex(b.value);
                     for (let i = 0; i < 6; i++) {
                         materials.push(new THREE.MeshStandardMaterial({ map: tex, metalness: 0.1, roughness: 0.2 }));
@@ -1121,7 +1349,7 @@
                 }
                 
                 m.userData.target = new THREE.Vector3((x - off) * SPACING, (y - off) * SPACING, (z - off) * SPACING);
-                m.userData.pos = [x, y, z];
+                m.userData.pos =[x, y, z];
                 const sel = selected && selected[0] === x && selected[1] === y && selected[2] === z;
                 
                 m.scale.setScalar(sel ? 1.15 : 1);
@@ -1161,7 +1389,7 @@
         }
 
         function spawnBlock() {
-            const validColumns = [];
+            const validColumns =[];
             for (let x = 0; x < GRID_SIZE; x++) {
                 for (let z = 0; z < GRID_SIZE; z++) {
                     if (!grid[x][GRID_SIZE - 1][z]) { 
@@ -1197,18 +1425,23 @@
                     saveHistory();
                     const v = b1.value * 2; 
                     score += v; 
+                    levelStats.scoreEarned += v;
                     moveCount++;
                     if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best', best); }
                     
+                    if (score > highestScoreThisGame) {
+                        addCoinsFromScore(score - highestScoreThisGame);
+                        highestScoreThisGame = score;
+                    }
+
                     grid[selected[0]][selected[1]][selected[2]] = null; 
                     grid[pos[0]][pos[1]][pos[2]] = { id: b2.id, value: v };
                     
                     applyGravity();
-                    spawnBlock(); // New block falls after every successful manual merge
-                    
+                    spawnBlock(); 
                     selected = null;
                     
-                    checkObjectives(v, v);
+                    checkObjectives(v,[v]);
 
                     if (v === 2048 && !hasWon) {
                         hasWon = true;
@@ -1224,11 +1457,13 @@
 
         function initGame() {
             try {
-                loadObjectives();
+                updateCoinUI();
                 init(); 
                 document.getElementById('best').innerText = best;
                 if (!loadGameState()) {
-                    resetGame();
+                    resetGame(); 
+                } else {
+                    updateLevelUI(); 
                 }
             } catch (e) {
                 console.error(e);
