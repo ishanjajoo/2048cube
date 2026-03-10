@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>2048 Cube 3D</title>
     
-    <!-- Google AdSense Code -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7156019979499838" crossorigin="anonymous"></script>
-    
     <!-- Three.js Engine -->
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     
     <style>
-        /* Core Reset & Flex Layout to protect against Ad overlaps */
+        /* Core Reset & Flex Layout */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #02040a; color: white; 
@@ -26,15 +23,7 @@
             overflow: hidden;
         }
 
-        /* Dedicated Ad Container at the top */
-        #ad-container {
-            width: 100%;
-            z-index: 100;
-            position: relative;
-            background: transparent;
-        }
-
-        /* Game wrapper takes up all remaining vertical space */
+        /* Game wrapper takes up all available space */
         #game-wrapper {
             position: relative;
             flex: 1;
@@ -91,7 +80,7 @@
             70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
         }
-        .btn.alert { animation: pulseAlert 1.5s infinite; border-color: #ff3b30; background: rgba(255, 59, 48, 0.1); }
+        .btn.alert { animation: pulseAlert 1.5s infinite; border-color: #ff3b30; background: rgba(255, 59, 48, 0.1); color: #ff3b30; }
 
         .cost-badge {
             position: absolute;
@@ -106,6 +95,7 @@
             border: 2px solid #02040a;
             z-index: 20;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         /* Floating Banner */
@@ -267,10 +257,7 @@
 </head>
 <body>
     
-    <!-- Ad Container -->
-    <div id="ad-container"></div>
-    
-    <!-- Game Container (Dynamically resizes to avoid ad overlap) -->
+    <!-- Game Container (Dynamically resizes) -->
     <div id="game-wrapper">
         <div id="canvas-container"></div>
         
@@ -303,10 +290,26 @@
                                 <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
                             </svg>
                         </button>
-                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 1 Coin)">
-                            <div class="cost-badge">🪙</div>
+                        
+                        <!-- Undo Button -->
+                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 5 Coins)">
+                            <div class="cost-badge">5 🪙</div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                         </button>
+
+                        <!-- Block Destroyer Power Button -->
+                        <button id="destroy-btn" class="btn" onclick="toggleDestroyMode()" disabled title="Destroy a Block (Cost: 10 Coins)">
+                            <div class="cost-badge">10 🪙</div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="22" y1="12" x2="18" y2="12"></line>
+                                <line x1="6" y1="12" x2="2" y2="12"></line>
+                                <line x1="12" y1="6" x2="12" y2="2"></line>
+                                <line x1="12" y1="22" x2="12" y2="18"></line>
+                            </svg>
+                        </button>
+
+                        <!-- Reset Button -->
                         <button class="btn" onclick="promptReset()" title="Reset Game">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
                         </button>
@@ -335,7 +338,7 @@
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
                     <button id="gravity-btn" class="btn" onclick="toggleGravity()" title="Invert Gravity (Cost: 1 Coin)">
-                        <div class="cost-badge">🪙</div>
+                        <div class="cost-badge">1 🪙</div>
                         <svg id="gravity-icon" class="flip-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8v12M17 20l-4-4M17 20l4-4"/>
                         </svg>
@@ -386,7 +389,7 @@
         // State Variables
         let grid =[], score = 0, best = localStorage.getItem('cube2048_3x3_best') || 0;
         let history =[], moveCount = 0;
-        let selected = null, gravityInverted = false; 
+        let selected = null, gravityInverted = false, isDestroyMode = false; 
         
         // Economy & Anti-Glitch Trackers
         let totalCoins = parseInt(localStorage.getItem('cube2048_coins')) || 0;
@@ -430,9 +433,30 @@
         function updateButtonStates() {
             const undoBtn = document.getElementById('undo-btn');
             const gravBtn = document.getElementById('gravity-btn');
+            const destroyBtn = document.getElementById('destroy-btn');
             
-            undoBtn.disabled = (history.length === 0 || totalCoins < 1 || isFlipping || isModalOpen);
-            gravBtn.disabled = (totalCoins < 1 || isFlipping || isModalOpen);
+            undoBtn.disabled = (history.length === 0 || totalCoins < 5 || isFlipping || isModalOpen || isDestroyMode);
+            gravBtn.disabled = (totalCoins < 1 || isFlipping || isModalOpen || isDestroyMode);
+            destroyBtn.disabled = (totalCoins < 10 || isFlipping || isModalOpen);
+        }
+
+        /* --- Block Destroyer Power --- */
+        function toggleDestroyMode(forceState) {
+            if (typeof forceState === "boolean") {
+                isDestroyMode = forceState;
+            } else {
+                if (isFlipping || isModalOpen || totalCoins < 10) return;
+                isDestroyMode = !isDestroyMode;
+            }
+            
+            const btn = document.getElementById('destroy-btn');
+            if (isDestroyMode) {
+                btn.classList.add('alert');
+                if (selected) { selected = null; sync(); } // Clear regular selection
+            } else {
+                btn.classList.remove('alert');
+            }
+            updateButtonStates(); // Keep buttons disabled while in mode
         }
 
         /* --- Level & Objectives Logic --- */
@@ -440,10 +464,10 @@
             if (level === 1) return[{ val: 128, count: 1 }];
             if (level === 2) return[{ val: 256, count: 1 }];
             if (level === 3) return[{ val: 256, count: 2 }];
-            if (level === 4) return [{ val: 512, count: 1 }];
-            if (level === 5) return [{ val: 512, count: 2 }];
-            if (level === 6) return [{ val: 1024, count: 1 }];
-            if (level === 7) return [{ val: 1024, count: 2 }];
+            if (level === 4) return[{ val: 512, count: 1 }];
+            if (level === 5) return[{ val: 512, count: 2 }];
+            if (level === 6) return[{ val: 1024, count: 1 }];
+            if (level === 7) return[{ val: 1024, count: 2 }];
             
             // Level 8 onwards: always require at least 1x 2048
             let reqs =[{ val: 2048, count: 1 }];
@@ -1141,7 +1165,7 @@
             while (i < filtered.length) {
                 if (i + 1 < filtered.length && filtered[i].value === filtered[i+1].value) {
                     let val = filtered[i].value * 2;
-                    scoreGained += val;
+                    scoreGained += filtered[i].value; 
                     newLine.push({ id: filtered[i].id, value: val }); 
                     i += 2;
                 } else {
@@ -1155,6 +1179,11 @@
 
         function directionalMove(direction) {
             if (isFlipping || isModalOpen) return;
+            
+            if (isDestroyMode) {
+                toggleDestroyMode(false); 
+            }
+
             saveHistory();
             
             let changed = false;
@@ -1262,9 +1291,12 @@
         function toggleGravity() {
             if (isFlipping || isModalOpen || totalCoins < 1) return;
             
+            if (isDestroyMode) {
+                toggleDestroyMode(false);
+            }
+
             saveHistory(); 
 
-            // Deduct Fee
             totalCoins -= 1;
             localStorage.setItem('cube2048_coins', totalCoins);
             updateCoinUI();
@@ -1275,7 +1307,6 @@
             document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
             updateButtonStates();
             
-            // Objective Tracking
             levelStats.gravityUses++;
             checkObjectives(0);
         }
@@ -1296,10 +1327,13 @@
         }
 
         function undoMove() {
-            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 1) return;
+            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 5) return;
             
-            // Deduct Fee
-            totalCoins -= 1;
+            if (isDestroyMode) {
+                toggleDestroyMode(false);
+            }
+
+            totalCoins -= 5;
             localStorage.setItem('cube2048_coins', totalCoins);
 
             const last = history.pop();
@@ -1322,6 +1356,10 @@
         }
 
         function resetGame() {
+            if (isDestroyMode) {
+                toggleDestroyMode(false);
+            }
+
             grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
             for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
                 const r = Math.random(); 
@@ -1336,7 +1374,6 @@
             gravityInverted = false;
             hasWon = false;
             
-            // Full reset sets player back to level 1 
             currentLevel = 1;
             levelStats = { gravityUses: 0, scoreEarned: 0 };
             objectives = generateObjectives(1);
@@ -1392,7 +1429,7 @@
                 m.userData.val = b.value;
             }
             
-            for (const [id, m] of blockMeshes.entries()) {
+            for (const[id, m] of blockMeshes.entries()) {
                 if (!ids.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); }
             }
             document.getElementById('score').innerText = score;
@@ -1442,6 +1479,34 @@
 
         function click(pos) {
             if (isFlipping || isModalOpen) return;
+            
+            // Handle Destroy Mode
+            if (isDestroyMode) {
+                if (grid[pos[0]][pos[1]][pos[2]]) {
+                    if (totalCoins < 10) return;
+
+                    saveHistory(); 
+                    
+                    totalCoins -= 10;
+                    localStorage.setItem('cube2048_coins', totalCoins);
+                    updateCoinUI();
+                    
+                    grid[pos[0]][pos[1]][pos[2]] = null;
+                    
+                    toggleDestroyMode(false);
+                    
+                    applyGravity();
+                    moveCount++;
+                    spawnBlock();
+                    
+                    sync();
+                    checkObjectives(0); 
+                    checkGameState();
+                    saveGameState();
+                }
+                return;
+            }
+
             if (!selected) { selected = pos; }
             else if (selected[0] === pos[0] && selected[1] === pos[1] && selected[2] === pos[2]) { selected = null; }
             else {
@@ -1451,8 +1516,8 @@
                 if (b1 && b2 && b1.value === b2.value && d === 1) { 
                     saveHistory();
                     const v = b1.value * 2; 
-                    score += v; 
-                    levelStats.scoreEarned += v;
+                    score += b1.value; 
+                    levelStats.scoreEarned += b1.value;
                     moveCount++;
                     if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best', best); }
                     
@@ -1468,7 +1533,7 @@
                     spawnBlock(); 
                     selected = null;
                     
-                    checkObjectives(v);
+                    checkObjectives(b1.value);
 
                     if (v === 2048 && !hasWon) {
                         hasWon = true;
