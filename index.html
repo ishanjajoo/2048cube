@@ -257,7 +257,7 @@
 </head>
 <body>
     
-    <!-- Game Container (Dynamically resizes) -->
+    <!-- Game Container -->
     <div id="game-wrapper">
         <div id="canvas-container"></div>
         
@@ -502,7 +502,9 @@
 
         // Procedurally generate the full objective suite for the current level
         function generateObjectives(level) {
-            let tiles = getTileRequirements(level).map(t => ({
+            let tilesReq = getTileRequirements(level);
+            
+            let tiles = tilesReq.map(t => ({
                 val: t.val,
                 target: t.count,
                 current: 0,
@@ -511,7 +513,11 @@
                 icon: "👑"
             }));
 
-            const tMoveScore = Math.floor(10 * Math.pow(1.05, level - 1));
+            // Snap Single Move objective to nearest multiple of 50 based on the highest tile synthesis score
+            let maxTile = Math.max(...tilesReq.map(t => t.val));
+            let baseMoveScore = maxTile / 2;
+            const tMoveScore = Math.ceil(baseMoveScore / 50) * 50;
+
             const tScore = Math.floor(250 * Math.pow(1.12, level - 1));
             const tGrav = Math.floor((level - 1) / 4) + 1;
 
@@ -596,26 +602,26 @@
                 renderObjectivesList();
             }
 
-            // Only alert UI if a NEW objective was completed while menu is closed
-            if (newlyUnlocked && !isModalOpen) {
-                document.getElementById('obj-btn').classList.add('alert');
-                document.getElementById('obj-notif').style.display = 'block';
-            }
-
             // Check Level Clear condition safely
             let allTilesCleared = objectives.tiles.every(t => t.unlocked);
             if (allTilesCleared && objectives.moveScore.unlocked && 
                 objectives.score.unlocked && objectives.gravity.unlocked) {
                 
+                // Unmark alert if level is clearing
+                document.getElementById('obj-btn').classList.remove('alert');
+                document.getElementById('obj-notif').style.display = 'none';
+
                 if (!window.isLevelingUp) {
                     window.isLevelingUp = true;
-                    document.getElementById('obj-btn').classList.remove('alert');
-                    document.getElementById('obj-notif').style.display = 'none';
                     setTimeout(() => {
                         levelUp();
                         window.isLevelingUp = false;
                     }, 1000); 
                 }
+            } else if (newlyUnlocked && !isModalOpen) {
+                // Only alert UI if a NEW objective was completed while menu is closed and level isn't done
+                document.getElementById('obj-btn').classList.add('alert');
+                document.getElementById('obj-notif').style.display = 'block';
             }
         }
 
