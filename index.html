@@ -200,7 +200,7 @@
             display: flex; align-items: center; gap: 15px; padding: 14px 18px;
             background: rgba(255,255,255,0.03); border-radius: 16px;
             border: 1px solid rgba(255,255,255,0.05); text-align: left;
-            opacity: 0.6; transition: all 0.3s;
+            opacity: 0.7; transition: all 0.3s;
         }
         .obj-item.unlocked {
             opacity: 1; border-color: rgba(167, 139, 250, 0.4);
@@ -210,11 +210,21 @@
         .obj-icon { font-size: 24px; filter: grayscale(100%); transition: all 0.3s; }
         .obj-item.unlocked .obj-icon { filter: grayscale(0%); transform: scale(1.1); }
         .obj-text { flex: 1; }
-        .obj-title { font-size: 14px; font-weight: 800; color: white; margin-bottom: 4px; display: flex; justify-content: space-between;}
+        .obj-title { font-size: 14px; font-weight: 800; color: white; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
         .obj-progress { font-size: 11px; opacity: 0.7; font-weight: 700; color: white; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 6px;}
         .obj-item.unlocked .obj-title { color: #a78bfa; }
         .obj-item.unlocked .obj-progress { display: none; }
         .obj-desc { font-size: 11px; color: #94a3b8; font-weight: 600; line-height: 1.3;}
+        
+        .skip-btn {
+            background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4);
+            color: #fbbf24; padding: 6px 12px; border-radius: 8px; font-size: 10px;
+            font-weight: 800; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            margin-left: 10px;
+        }
+        .skip-btn:hover { background: rgba(251, 191, 36, 0.3); transform: scale(1.05); }
+        .skip-btn:active { transform: scale(0.95); }
+        .done-mark { color: #22d3ee; font-weight: 900; margin-left: 10px; font-size: 16px; }
 
         /* Toast Notifications */
         #toast-container {
@@ -230,6 +240,7 @@
             animation: slideInDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             transition: opacity 0.4s ease, transform 0.4s ease;
         }
+        .toast.error { border-color: #ff3b30; }
         .toast-icon { font-size: 18px; }
         @keyframes slideInDown {
             from { transform: translateY(-30px) scale(0.9); opacity: 0; }
@@ -252,6 +263,8 @@
             }
             .banner-text { align-items: center; }
             .banner-btn { width: 100%; padding: 16px; font-size: 14px; }
+            .obj-item { padding: 10px 12px; }
+            .skip-btn { padding: 5px 8px; font-size: 9px; }
         }
     </style>
 </head>
@@ -398,9 +411,9 @@
 
         // Level & Objective System
         let currentLevel = 1;
-        let levelStats = { gravityUses: 0, scoreEarned: 0 };
+        let levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
         let objectives = {};
-        window.isLevelingUp = false; // Anti-spam lock
+        window.isLevelingUp = false; 
         
         // Three.js Objects
         let scene, camera, renderer, raycaster, mouse, cubeGroup;
@@ -452,11 +465,11 @@
             const btn = document.getElementById('destroy-btn');
             if (isDestroyMode) {
                 btn.classList.add('alert');
-                if (selected) { selected = null; sync(); } // Clear regular selection
+                if (selected) { selected = null; sync(); } 
             } else {
                 btn.classList.remove('alert');
             }
-            updateButtonStates(); // Keep buttons disabled while in mode
+            updateButtonStates(); 
         }
 
         /* --- Level & Objectives Logic --- */
@@ -469,26 +482,23 @@
             if (level === 6) return[{ val: 1024, count: 1 }];
             if (level === 7) return[{ val: 1024, count: 2 }];
             
-            // Level 8 onwards: always require at least 1x 2048
             let reqs =[{ val: 2048, count: 1 }];
             if (level === 8) return reqs;
 
-            // Level 9-100: Add progressively scaling secondary targets
             const secondaryVals =[128, 256, 512, 1024, 2048, 4096, 8192];
             let offset = level - 9; 
             let valIndex = Math.floor(offset / 3) % secondaryVals.length;
-            let countSequence = (offset % 3) + 1; // Count oscillates: 1, 2, 3
+            let countSequence = (offset % 3) + 1; 
 
             let secVal = secondaryVals[valIndex];
             let secCount = countSequence;
 
             if (secVal === 2048) {
-                reqs[0].count += secCount; // Merge counts if it targets 2048
+                reqs[0].count += secCount; 
             } else {
                 reqs.push({ val: secVal, count: secCount });
             }
             
-            // Introduce a tertiary requirement every 20 levels for extra spice
             if (level >= 30) {
                 let tertVal = secondaryVals[(valIndex + 2) % secondaryVals.length];
                 let tertCount = (offset % 2) + 1;
@@ -500,7 +510,6 @@
             return reqs.sort((a, b) => b.val - a.val);
         }
 
-        // Procedurally generate the full objective suite for the current level
         function generateObjectives(level) {
             let tilesReq = getTileRequirements(level);
             
@@ -513,29 +522,38 @@
                 icon: "👑"
             }));
 
-            // Snap Single Move objective to nearest multiple of 50 based on the highest tile synthesis score
-            let maxTile = Math.max(...tilesReq.map(t => t.val));
-            let baseMoveScore = maxTile / 2;
-            const tMoveScore = Math.ceil(baseMoveScore / 50) * 50;
-
             const tScore = Math.floor(250 * Math.pow(1.12, level - 1));
             const tGrav = Math.floor((level - 1) / 4) + 1;
 
+            // Power objective alternates based on level to use Undo or Destroyer
+            let powerObj = {};
+            if (level % 2 === 0) {
+                let tTarget = Math.floor(level / 8) + 1;
+                powerObj = { id: 'destroyer', target: tTarget, unlocked: false, desc: `Use Block Destroyer ${tTarget} time${tTarget > 1 ? 's' : ''}`, icon: "💥" };
+            } else {
+                let uTarget = Math.floor(level / 5) + 1;
+                powerObj = { id: 'undo', target: uTarget, unlocked: false, desc: `Use Undo ${uTarget} time${uTarget > 1 ? 's' : ''}`, icon: "↩️" };
+            }
+
             return {
                 tiles: tiles,
-                moveScore: { target: tMoveScore, unlocked: false, desc: `Score ${tMoveScore}+ points in one move`, icon: "💥" },
                 score: { target: tScore, unlocked: false, desc: `Earn ${tScore} score this level`, icon: "🏅" },
-                gravity: { target: tGrav, unlocked: false, desc: `Use invert gravity ${tGrav} time${tGrav > 1 ? 's' : ''}`, icon: "🌀" }
+                gravity: { target: tGrav, unlocked: false, desc: `Use invert gravity ${tGrav} time${tGrav > 1 ? 's' : ''}`, icon: "🌀" },
+                power: powerObj
             };
         }
 
-        function showToast(desc, icon) {
+        function showToast(desc, icon, isError = false) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<span class="toast-icon">${icon}</span> ${desc} Completed!`;
+            toast.className = `toast ${isError ? 'error' : ''}`;
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> ${desc}`;
             container.appendChild(toast);
             
+            if (!isError) {
+                document.getElementById('obj-notif').style.display = 'block';
+            }
+
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(-20px) scale(0.9)';
@@ -543,7 +561,56 @@
             }, 3000);
         }
 
-        function checkObjectives(moveScore = 0) {
+        function checkLevelClear() {
+            let allTilesCleared = objectives.tiles.every(t => t.unlocked);
+            if (allTilesCleared && objectives.score.unlocked && 
+                objectives.gravity.unlocked && objectives.power.unlocked) {
+                
+                document.getElementById('obj-btn').classList.remove('alert');
+                document.getElementById('obj-notif').style.display = 'none';
+
+                if (!window.isLevelingUp) {
+                    window.isLevelingUp = true;
+                    setTimeout(() => {
+                        levelUp();
+                        window.isLevelingUp = false;
+                    }, 1000); 
+                }
+            }
+        }
+
+        function skipObjective(key, tileIndex = null) {
+            if (totalCoins < 25) {
+                showToast("Not enough coins to skip!", "⚠️", true);
+                return;
+            }
+            
+            // Deduct Coins
+            totalCoins -= 25;
+            localStorage.setItem('cube2048_coins', totalCoins);
+            updateCoinUI();
+
+            // Unlock Objective
+            if (key === 'tile' && tileIndex !== null) {
+                objectives.tiles[tileIndex].unlocked = true;
+                objectives.tiles[tileIndex].current = objectives.tiles[tileIndex].target;
+            } else {
+                objectives[key].unlocked = true;
+                if (key === 'score') levelStats.scoreEarned = objectives[key].target;
+                if (key === 'gravity') levelStats.gravityUses = objectives[key].target;
+                if (key === 'power') {
+                    if (objectives.power.id === 'undo') levelStats.undoUses = objectives.power.target;
+                    if (objectives.power.id === 'destroyer') levelStats.destroyerUses = objectives.power.target;
+                }
+            }
+
+            showToast("Objective Skipped!", "⏭️");
+            renderObjectivesList();
+            saveGameState();
+            checkLevelClear();
+        }
+
+        function checkObjectives() {
             let newlyUnlocked = false;
             let progressChanged = false;
             
@@ -564,7 +631,7 @@
                     if (currentCountOnBoard >= t.target) {
                         t.current = t.target; 
                         t.unlocked = true;
-                        showToast(t.desc, t.icon);
+                        showToast(t.desc + ' Completed!', t.icon);
                         newlyUnlocked = true;
                     } else if (t.current !== currentCountOnBoard) {
                         t.current = currentCountOnBoard;
@@ -573,61 +640,52 @@
                 }
             }
             
-            // 2. Move Score
-            if (!objectives.moveScore.unlocked && moveScore >= objectives.moveScore.target) {
-                objectives.moveScore.unlocked = true;
-                showToast(objectives.moveScore.desc, objectives.moveScore.icon);
-                newlyUnlocked = true;
-            }
-            
-            // 3. Level Score
+            // 2. Level Score
             if (!objectives.score.unlocked) {
                 if (levelStats.scoreEarned >= objectives.score.target) {
                     objectives.score.unlocked = true;
-                    showToast(objectives.score.desc, objectives.score.icon);
+                    showToast(objectives.score.desc + ' Completed!', objectives.score.icon);
                     newlyUnlocked = true;
-                } else if (moveScore > 0) {
+                } else {
                     progressChanged = true;
                 }
             }
             
-            // 4. Gravity
+            // 3. Gravity
             if (!objectives.gravity.unlocked && levelStats.gravityUses >= objectives.gravity.target) {
                 objectives.gravity.unlocked = true;
-                showToast(objectives.gravity.desc, objectives.gravity.icon);
+                showToast(objectives.gravity.desc + ' Completed!', objectives.gravity.icon);
                 newlyUnlocked = true;
+            }
+
+            // 4. Power (Undo/Destroyer)
+            if (!objectives.power.unlocked) {
+                let uses = objectives.power.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses;
+                if (uses >= objectives.power.target) {
+                    objectives.power.unlocked = true;
+                    showToast(objectives.power.desc + ' Completed!', objectives.power.icon);
+                    newlyUnlocked = true;
+                } else {
+                    progressChanged = true;
+                }
             }
 
             if ((newlyUnlocked || progressChanged) && isModalOpen) {
                 renderObjectivesList();
             }
 
-            // Check Level Clear condition safely
-            let allTilesCleared = objectives.tiles.every(t => t.unlocked);
-            if (allTilesCleared && objectives.moveScore.unlocked && 
-                objectives.score.unlocked && objectives.gravity.unlocked) {
-                
-                // Unmark alert if level is clearing
-                document.getElementById('obj-btn').classList.remove('alert');
-                document.getElementById('obj-notif').style.display = 'none';
-
-                if (!window.isLevelingUp) {
-                    window.isLevelingUp = true;
-                    setTimeout(() => {
-                        levelUp();
-                        window.isLevelingUp = false;
-                    }, 1000); 
-                }
-            } else if (newlyUnlocked && !isModalOpen) {
-                // Only alert UI if a NEW objective was completed while menu is closed and level isn't done
+            // Only alert UI if a NEW objective was completed while menu is closed
+            if (newlyUnlocked && !isModalOpen) {
                 document.getElementById('obj-btn').classList.add('alert');
                 document.getElementById('obj-notif').style.display = 'block';
             }
+
+            checkLevelClear();
         }
 
         function levelUp() {
             currentLevel++;
-            levelStats = { gravityUses: 0, scoreEarned: 0 };
+            levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
             objectives = generateObjectives(currentLevel);
             
             updateLevelUI();
@@ -644,68 +702,53 @@
             const list = document.getElementById('objectives-list');
             list.innerHTML = '';
             
-            // Render Tile Requirements
-            objectives.tiles.forEach(t => {
-                const div = document.createElement('div');
-                div.className = `obj-item ${t.unlocked ? 'unlocked' : ''}`;
-                let progressText = t.unlocked ? '' : `(${t.current} / ${t.target})`;
-                div.innerHTML = `
-                    <div class="obj-icon">${t.icon}</div>
-                    <div class="obj-text">
-                        <div class="obj-title">
-                            <span>TILE SYNTHESIS</span>
-                            ${progressText ? `<span class="obj-progress">${progressText}</span>` : ''}
+            const createObjHTML = (obj, key, title, progressText, tileIndex = null) => {
+                const skipStr = !obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tileIndex})">Skip 25 🪙</button>` : `<div class="done-mark">✔️</div>`;
+                return `
+                    <div class="obj-item ${obj.unlocked ? 'unlocked' : ''}">
+                        <div class="obj-icon">${obj.icon}</div>
+                        <div class="obj-text">
+                            <div class="obj-title">
+                                <span>${title}</span>
+                                ${progressText ? `<span class="obj-progress">${progressText}</span>` : ''}
+                            </div>
+                            <div class="obj-desc">${obj.desc}</div>
                         </div>
-                        <div class="obj-desc">${t.desc}</div>
+                        ${skipStr}
                     </div>
                 `;
-                list.appendChild(div);
-            });
+            };
 
-            // Render Move Score
-            let msObj = objectives.moveScore;
-            list.innerHTML += `
-                <div class="obj-item ${msObj.unlocked ? 'unlocked' : ''}">
-                    <div class="obj-icon">${msObj.icon}</div>
-                    <div class="obj-text">
-                        <div class="obj-title"><span>SINGLE MOVE</span></div>
-                        <div class="obj-desc">${msObj.desc}</div>
-                    </div>
-                </div>
-            `;
+            // Render Tiles
+            objectives.tiles.forEach((t, idx) => {
+                let pText = t.unlocked ? '' : `(${t.current} / ${t.target})`;
+                list.innerHTML += createObjHTML(t, 'tile', 'TILE SYNTHESIS', pText, idx);
+            });
             
             // Render Level Score
             let sObj = objectives.score;
-            let sProg = sObj.unlocked ? '' : `<span class="obj-progress">(${levelStats.scoreEarned} / ${sObj.target})</span>`;
-            list.innerHTML += `
-                <div class="obj-item ${sObj.unlocked ? 'unlocked' : ''}">
-                    <div class="obj-icon">${sObj.icon}</div>
-                    <div class="obj-text">
-                        <div class="obj-title"><span>TOTAL SCORE</span>${sProg}</div>
-                        <div class="obj-desc">${sObj.desc}</div>
-                    </div>
-                </div>
-            `;
+            let sProg = sObj.unlocked ? '' : `(${levelStats.scoreEarned} / ${sObj.target})`;
+            list.innerHTML += createObjHTML(sObj, 'score', 'TOTAL SCORE', sProg);
 
             // Render Gravity
             let gObj = objectives.gravity;
-            let gProg = gObj.unlocked ? '' : `<span class="obj-progress">(${levelStats.gravityUses} / ${gObj.target})</span>`;
-            list.innerHTML += `
-                <div class="obj-item ${gObj.unlocked ? 'unlocked' : ''}">
-                    <div class="obj-icon">${gObj.icon}</div>
-                    <div class="obj-text">
-                        <div class="obj-title"><span>GRAVITY SHIFT</span>${gProg}</div>
-                        <div class="obj-desc">${gObj.desc}</div>
-                    </div>
-                </div>
-            `;
+            let gProg = gObj.unlocked ? '' : `(${levelStats.gravityUses} / ${gObj.target})`;
+            list.innerHTML += createObjHTML(gObj, 'gravity', 'GRAVITY SHIFT', gProg);
+
+            // Render Power
+            let pObj = objectives.power;
+            let pProg = '';
+            if (!pObj.unlocked) {
+                let currentUses = pObj.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses;
+                pProg = `(${currentUses} / ${pObj.target})`;
+            }
+            list.innerHTML += createObjHTML(pObj, 'power', pObj.id === 'undo' ? 'TIME TRAVEL' : 'DEMOLITION', pProg);
         }
 
         function openObjectives() {
             if (isFlipping) return;
             isModalOpen = true;
             
-            // Clear alerts immediately upon opening
             document.getElementById('obj-notif').style.display = 'none';
             document.getElementById('obj-btn').classList.remove('alert');
             
@@ -769,12 +812,13 @@
                     history = state.history ||[];
                     
                     currentLevel = state.currentLevel || 1;
-                    levelStats = state.levelStats || { gravityUses: 0, scoreEarned: 0 };
+                    levelStats = state.levelStats || { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
                     highestScoreThisGame = state.highestScoreThisGame || 0;
                     
-                    if (state.objectives && state.objectives.tiles) {
+                    if (state.objectives && state.objectives.power) {
                         objectives = state.objectives;
                     } else {
+                        // Handle migration from older state format without power objective
                         objectives = generateObjectives(currentLevel);
                     }
                     
@@ -784,8 +828,7 @@
                     sync();
                     checkGameState();
                     
-                    // Resume checking for alert status on load
-                    checkObjectives(0);
+                    checkObjectives();
                     return true;
                 } catch (e) {
                     console.error("Failed to load state", e);
@@ -1270,7 +1313,7 @@
                 }
 
                 sync();
-                checkObjectives(moveScore);
+                checkObjectives();
                 
                 let zenithFound = false;
                 for (let x = 0; x < GRID_SIZE; x++) {
@@ -1314,7 +1357,7 @@
             updateButtonStates();
             
             levelStats.gravityUses++;
-            checkObjectives(0);
+            checkObjectives();
         }
 
         function saveHistory() {
@@ -1325,7 +1368,6 @@
                 moveCount: moveCount, 
                 iconFlipped: gravityInverted,
                 levelStats: { ...levelStats },
-                objectives: JSON.parse(JSON.stringify(objectives)),
                 currentLevel: currentLevel
             });
             if (history.length > 30) history.shift();
@@ -1342,13 +1384,21 @@
             totalCoins -= 5;
             localStorage.setItem('cube2048_coins', totalCoins);
 
+            const currentObjs = JSON.stringify(objectives);
+            const currentUndoUses = (levelStats.undoUses || 0) + 1;
+            const currentDestroyerUses = levelStats.destroyerUses || 0;
+
             const last = history.pop();
             grid = last.grid; 
             score = last.score; 
             moveCount = last.moveCount; 
             gravityInverted = last.iconFlipped || false;
-            levelStats = last.levelStats || { gravityUses: 0, scoreEarned: 0 };
-            objectives = last.objectives || generateObjectives(currentLevel);
+            
+            levelStats = last.levelStats || { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
+            levelStats.undoUses = currentUndoUses;
+            levelStats.destroyerUses = currentDestroyerUses;
+            
+            objectives = JSON.parse(currentObjs);
             currentLevel = last.currentLevel || 1;
             selected = null;
             
@@ -1359,6 +1409,8 @@
             sync();
             checkGameState();
             saveGameState();
+            
+            checkObjectives();
         }
 
         function resetGame() {
@@ -1381,7 +1433,7 @@
             hasWon = false;
             
             currentLevel = 1;
-            levelStats = { gravityUses: 0, scoreEarned: 0 };
+            levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
             objectives = generateObjectives(1);
             
             document.getElementById('gravity-icon').style.transform = 'rotate(0deg)';
@@ -1486,13 +1538,15 @@
         function click(pos) {
             if (isFlipping || isModalOpen) return;
             
-            // Handle Destroy Mode
             if (isDestroyMode) {
                 if (grid[pos[0]][pos[1]][pos[2]]) {
                     if (totalCoins < 10) return;
 
                     saveHistory(); 
                     
+                    const currentObjs = JSON.stringify(objectives);
+                    levelStats.destroyerUses = (levelStats.destroyerUses || 0) + 1;
+
                     totalCoins -= 10;
                     localStorage.setItem('cube2048_coins', totalCoins);
                     updateCoinUI();
@@ -1500,15 +1554,15 @@
                     grid[pos[0]][pos[1]][pos[2]] = null;
                     
                     toggleDestroyMode(false);
-                    
                     applyGravity();
                     moveCount++;
                     spawnBlock();
                     
                     sync();
-                    checkObjectives(0); 
                     checkGameState();
                     saveGameState();
+                    
+                    checkObjectives(); 
                 }
                 return;
             }
@@ -1539,7 +1593,7 @@
                     spawnBlock(); 
                     selected = null;
                     
-                    checkObjectives(b1.value);
+                    checkObjectives();
 
                     if (v === 2048 && !hasWon) {
                         hasWon = true;
