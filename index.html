@@ -305,14 +305,14 @@
                         </button>
                         
                         <!-- Undo Button -->
-                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 5 Coins)">
-                            <div class="cost-badge">5 🪙</div>
+                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 2 Coins)">
+                            <div class="cost-badge">2 🪙</div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                         </button>
 
                         <!-- Block Destroyer Power Button -->
-                        <button id="destroy-btn" class="btn" onclick="toggleDestroyMode()" disabled title="Destroy a Block (Cost: 10 Coins)">
-                            <div class="cost-badge">10 🪙</div>
+                        <button id="destroy-btn" class="btn" onclick="toggleDestroyMode()" disabled title="Destroy a Block (Cost: 2 Coins)">
+                            <div class="cost-badge">2 🪙</div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="22" y1="12" x2="18" y2="12"></line>
@@ -448,9 +448,9 @@
             const gravBtn = document.getElementById('gravity-btn');
             const destroyBtn = document.getElementById('destroy-btn');
             
-            undoBtn.disabled = (history.length === 0 || totalCoins < 5 || isFlipping || isModalOpen || isDestroyMode);
+            undoBtn.disabled = (history.length === 0 || totalCoins < 2 || isFlipping || isModalOpen || isDestroyMode);
             gravBtn.disabled = (totalCoins < 1 || isFlipping || isModalOpen || isDestroyMode);
-            destroyBtn.disabled = (totalCoins < 10 || isFlipping || isModalOpen);
+            destroyBtn.disabled = (totalCoins < 2 || isFlipping || isModalOpen);
         }
 
         /* --- Block Destroyer Power --- */
@@ -458,7 +458,7 @@
             if (typeof forceState === "boolean") {
                 isDestroyMode = forceState;
             } else {
-                if (isFlipping || isModalOpen || totalCoins < 10) return;
+                if (isFlipping || isModalOpen || totalCoins < 2) return;
                 isDestroyMode = !isDestroyMode;
             }
             
@@ -518,14 +518,13 @@
                 target: t.count,
                 current: 0,
                 unlocked: false,
-                desc: `Have ${t.count}x [${t.val}] tile${t.count > 1 ? 's' : ''} on board`,
+                desc: `Have ${t.count}x[${t.val}] tile${t.count > 1 ? 's' : ''} on board`,
                 icon: "👑"
             }));
 
             const tScore = Math.floor(250 * Math.pow(1.12, level - 1));
             const tGrav = Math.floor((level - 1) / 4) + 1;
 
-            // Power objective alternates based on level to use Undo or Destroyer
             let powerObj = {};
             if (level % 2 === 0) {
                 let tTarget = Math.floor(level / 8) + 1;
@@ -580,17 +579,15 @@
         }
 
         function skipObjective(key, tileIndex = null) {
-            if (totalCoins < 25) {
+            if (totalCoins < 10) {
                 showToast("Not enough coins to skip!", "⚠️", true);
                 return;
             }
             
-            // Deduct Coins
-            totalCoins -= 25;
+            totalCoins -= 10;
             localStorage.setItem('cube2048_coins', totalCoins);
             updateCoinUI();
 
-            // Unlock Objective
             if (key === 'tile' && tileIndex !== null) {
                 objectives.tiles[tileIndex].unlocked = true;
                 objectives.tiles[tileIndex].current = objectives.tiles[tileIndex].target;
@@ -614,7 +611,6 @@
             let newlyUnlocked = false;
             let progressChanged = false;
             
-            // 1. Process Tile Objectives (Strict Board State Scan)
             for (let t of objectives.tiles) {
                 if (!t.unlocked) {
                     let currentCountOnBoard = 0;
@@ -640,7 +636,6 @@
                 }
             }
             
-            // 2. Level Score
             if (!objectives.score.unlocked) {
                 if (levelStats.scoreEarned >= objectives.score.target) {
                     objectives.score.unlocked = true;
@@ -651,14 +646,12 @@
                 }
             }
             
-            // 3. Gravity
             if (!objectives.gravity.unlocked && levelStats.gravityUses >= objectives.gravity.target) {
                 objectives.gravity.unlocked = true;
                 showToast(objectives.gravity.desc + ' Completed!', objectives.gravity.icon);
                 newlyUnlocked = true;
             }
 
-            // 4. Power (Undo/Destroyer)
             if (!objectives.power.unlocked) {
                 let uses = objectives.power.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses;
                 if (uses >= objectives.power.target) {
@@ -674,7 +667,6 @@
                 renderObjectivesList();
             }
 
-            // Only alert UI if a NEW objective was completed while menu is closed
             if (newlyUnlocked && !isModalOpen) {
                 document.getElementById('obj-btn').classList.add('alert');
                 document.getElementById('obj-notif').style.display = 'block';
@@ -703,7 +695,7 @@
             list.innerHTML = '';
             
             const createObjHTML = (obj, key, title, progressText, tileIndex = null) => {
-                const skipStr = !obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tileIndex})">Skip 25 🪙</button>` : `<div class="done-mark">✔️</div>`;
+                const skipStr = !obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tileIndex})">Skip 10 🪙</button>` : `<div class="done-mark">✔️</div>`;
                 return `
                     <div class="obj-item ${obj.unlocked ? 'unlocked' : ''}">
                         <div class="obj-icon">${obj.icon}</div>
@@ -719,23 +711,19 @@
                 `;
             };
 
-            // Render Tiles
             objectives.tiles.forEach((t, idx) => {
                 let pText = t.unlocked ? '' : `(${t.current} / ${t.target})`;
                 list.innerHTML += createObjHTML(t, 'tile', 'TILE SYNTHESIS', pText, idx);
             });
             
-            // Render Level Score
             let sObj = objectives.score;
             let sProg = sObj.unlocked ? '' : `(${levelStats.scoreEarned} / ${sObj.target})`;
             list.innerHTML += createObjHTML(sObj, 'score', 'TOTAL SCORE', sProg);
 
-            // Render Gravity
             let gObj = objectives.gravity;
             let gProg = gObj.unlocked ? '' : `(${levelStats.gravityUses} / ${gObj.target})`;
             list.innerHTML += createObjHTML(gObj, 'gravity', 'GRAVITY SHIFT', gProg);
 
-            // Render Power
             let pObj = objectives.power;
             let pProg = '';
             if (!pObj.unlocked) {
@@ -818,7 +806,6 @@
                     if (state.objectives && state.objectives.power) {
                         objectives = state.objectives;
                     } else {
-                        // Handle migration from older state format without power objective
                         objectives = generateObjectives(currentLevel);
                     }
                     
@@ -1375,13 +1362,13 @@
         }
 
         function undoMove() {
-            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 5) return;
+            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 2) return;
             
             if (isDestroyMode) {
                 toggleDestroyMode(false);
             }
 
-            totalCoins -= 5;
+            totalCoins -= 2;
             localStorage.setItem('cube2048_coins', totalCoins);
 
             const currentObjs = JSON.stringify(objectives);
@@ -1487,7 +1474,7 @@
                 m.userData.val = b.value;
             }
             
-            for (const[id, m] of blockMeshes.entries()) {
+            for (const [id, m] of blockMeshes.entries()) {
                 if (!ids.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); }
             }
             document.getElementById('score').innerText = score;
@@ -1538,22 +1525,24 @@
         function click(pos) {
             if (isFlipping || isModalOpen) return;
             
+            // Handle Destroy Mode
             if (isDestroyMode) {
                 if (grid[pos[0]][pos[1]][pos[2]]) {
-                    if (totalCoins < 10) return;
+                    if (totalCoins < 2) return;
 
                     saveHistory(); 
                     
                     const currentObjs = JSON.stringify(objectives);
                     levelStats.destroyerUses = (levelStats.destroyerUses || 0) + 1;
 
-                    totalCoins -= 10;
+                    totalCoins -= 2;
                     localStorage.setItem('cube2048_coins', totalCoins);
                     updateCoinUI();
                     
                     grid[pos[0]][pos[1]][pos[2]] = null;
                     
                     toggleDestroyMode(false);
+                    
                     applyGravity();
                     moveCount++;
                     spawnBlock();
