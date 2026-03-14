@@ -33,8 +33,48 @@
 
         #canvas-container { position: absolute; inset: 0; z-index: 0; touch-action: none; }
         
+        /* Home UI Wrapper */
+        #home-ui {
+            position: absolute; inset: 0; z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(2, 4, 15, 0.75); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            transition: opacity 0.3s ease;
+        }
+
+        .home-title { 
+            font-size: 54px; font-weight: 900; font-style: italic; 
+            background: linear-gradient(135deg, #818cf8, #22d3ee); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            margin-bottom: 5px; text-align: center; letter-spacing: -2px;
+            filter: drop-shadow(0 10px 20px rgba(34, 211, 238, 0.2));
+        }
+        .home-subtitle { font-size: 11px; color: #94a3b8; font-weight: 800; letter-spacing: 3px; margin-bottom: 40px; text-transform: uppercase; }
+        
+        .mode-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white;
+            padding: 16px 30px; border-radius: 20px; font-size: 18px; font-weight: 900;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 15px; width: 280px; text-align: center;
+            display: flex; flex-direction: column; gap: 6px; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .mode-btn:hover { background: rgba(34, 211, 238, 0.15); border-color: #22d3ee; transform: translateY(-3px); box-shadow: 0 15px 40px rgba(34, 211, 238, 0.3); }
+        .mode-btn:active { transform: translateY(0) scale(0.96); }
+        .mode-desc { font-size: 10px; opacity: 0.6; font-weight: 700; letter-spacing: 1px; }
+
+        .sound-btn {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; border-radius: 50%; width: 50px; height: 50px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.2s; backdrop-filter: blur(10px);
+        }
+        .sound-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .sound-btn:active { transform: scale(0.95); }
+
         /* Game UI Wrapper */
-        #game-ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+        #game-ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; display: none; }
 
         .ui { position: absolute; left: 0; right: 0; }
         .ui-top {
@@ -265,11 +305,45 @@
             .banner-btn { width: 100%; padding: 16px; font-size: 14px; }
             .obj-item { padding: 10px 12px; }
             .skip-btn { padding: 5px 8px; font-size: 9px; }
+            .home-title { font-size: 42px; }
         }
     </style>
 </head>
 <body>
     
+    <!-- Home Menu Overlay -->
+    <div id="home-ui">
+        <div class="home-title">2048 CUBE 3D</div>
+        <div class="home-subtitle">Select Difficulty</div>
+        
+        <button class="sound-btn" onclick="toggleMute()" title="Toggle Sound">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <g id="sound-on">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </g>
+                <g id="sound-off" style="display:none;">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                </g>
+            </svg>
+        </button>
+
+        <button class="mode-btn" onclick="startGame('easy')">
+            EASY
+            <span class="mode-desc">Click or Slide to Merge. All Powers.</span>
+        </button>
+        <button class="mode-btn" onclick="startGame('medium')">
+            MEDIUM
+            <span class="mode-desc">Slide to Merge ONLY. All Powers.</span>
+        </button>
+        <button class="mode-btn" onclick="startGame('hard')">
+            HARD
+            <span class="mode-desc">Slide ONLY. No Undo. No Destroyer.</span>
+        </button>
+    </div>
+
     <!-- Game Container -->
     <div id="game-wrapper">
         <div id="canvas-container"></div>
@@ -279,10 +353,10 @@
             <div class="ui ui-top">
                 <div class="title-container">
                     <div class="title-row">
-                        <div class="title" id="game-title">2048 CUBE 3D</div>
+                        <div class="title" id="game-title">2048 CUBE</div>
                         <div class="level-badge" id="level-display">LVL 1</div>
                     </div>
-                    <div class="subtitle">Click or Slide to merge identical boxes</div>
+                    <div class="subtitle" id="game-subtitle">Click or Slide to merge</div>
                 </div>
                 <div class="right-panel">
                     <div class="score-group">
@@ -291,6 +365,11 @@
                         <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
                     </div>
                     <div class="btn-group">
+                        <!-- Home Button -->
+                        <button class="btn" onclick="goHome()" title="Return Home">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        </button>
+                        
                         <!-- Trophy / Objectives Button -->
                         <button class="btn" id="obj-btn" onclick="openObjectives()" title="Level Objectives">
                             <div class="notification-dot" id="obj-notif"></div>
@@ -305,14 +384,14 @@
                         </button>
                         
                         <!-- Undo Button -->
-                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 2 Coins)">
-                            <div class="cost-badge">2 🪙</div>
+                        <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 5 Coins)">
+                            <div class="cost-badge">5 🪙</div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                         </button>
 
                         <!-- Block Destroyer Power Button -->
-                        <button id="destroy-btn" class="btn" onclick="toggleDestroyMode()" disabled title="Destroy a Block (Cost: 2 Coins)">
-                            <div class="cost-badge">2 🪙</div>
+                        <button id="destroy-btn" class="btn" onclick="toggleDestroyMode()" disabled title="Destroy a Block (Cost: 10 Coins)">
+                            <div class="cost-badge">10 🪙</div>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="22" y1="12" x2="18" y2="12"></line>
@@ -400,7 +479,8 @@
         };
         
         // State Variables
-        let grid =[], score = 0, best = localStorage.getItem('cube2048_3x3_best') || 0;
+        let currentMode = 'easy'; // 'easy', 'medium', 'hard'
+        let grid =[], score = 0, best = 0;
         let history =[], moveCount = 0;
         let selected = null, gravityInverted = false, isDestroyMode = false; 
         
@@ -414,16 +494,126 @@
         let levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
         let objectives = {};
         window.isLevelingUp = false; 
+
+        // Audio System
+        let audioCtx = null;
+        let isMuted = localStorage.getItem('cube2048_muted') === 'true';
+
+        function initAudio() {
+            if (isMuted) return;
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            localStorage.setItem('cube2048_muted', isMuted);
+            document.getElementById('sound-on').style.display = isMuted ? 'none' : 'block';
+            document.getElementById('sound-off').style.display = isMuted ? 'block' : 'none';
+            if (!isMuted) initAudio();
+        }
+
+        function playTone(freq, type, duration, volLevel = 0.1) {
+            if (isMuted) return;
+            initAudio(); 
+            if (!audioCtx) return;
+
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(volLevel, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playMergeSound() {
+            playTone(440, 'sine', 0.1, 0.1);
+            setTimeout(() => playTone(587.33, 'sine', 0.15, 0.1), 50); 
+        }
+
+        function playDestroySound() {
+            playTone(150, 'sawtooth', 0.3, 0.15);
+            setTimeout(() => playTone(80, 'square', 0.4, 0.15), 50);
+        }
+
+        function playZenithSound() {
+            playTone(523.25, 'sine', 0.3, 0.15); 
+            setTimeout(() => playTone(659.25, 'sine', 0.3, 0.15), 150); 
+            setTimeout(() => playTone(783.99, 'sine', 0.3, 0.15), 300); 
+            setTimeout(() => playTone(1046.50, 'sine', 0.8, 0.2), 450); 
+        }
         
         // Three.js Objects
         let scene, camera, renderer, raycaster, mouse, cubeGroup;
         let blockMeshes = new Map(), textureCache = new Map();
         let rotX = 0.4, rotY = 0.6, isDrag = false, px = 0, py = 0, startX = 0, startY = 0;
-        let isFlipping = false, flipProgress = 0, isModalOpen = false;
+        let isFlipping = false, flipProgress = 0;
         let hasWon = false, currentBannerType = '';
         let bannerTimeout = null;
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+        // Apply visual mute state on load
+        if (isMuted) {
+            document.getElementById('sound-on').style.display = 'none';
+            document.getElementById('sound-off').style.display = 'block';
+        }
+
+        /* --- Navigation Functions --- */
+        function startGame(mode) {
+            initAudio(); // Boot audio on user interaction
+            currentMode = mode;
+            document.getElementById('home-ui').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+
+            let subtitleStr = "Click or Slide to merge";
+            if (mode === 'medium') subtitleStr = "Slide to merge ONLY";
+            if (mode === 'hard') subtitleStr = "Hard Mode: No click, No Powers";
+            document.getElementById('game-subtitle').innerText = subtitleStr;
+
+            const undoBtn = document.getElementById('undo-btn');
+            const destroyBtn = document.getElementById('destroy-btn');
+            if (mode === 'hard') {
+                undoBtn.style.display = 'none';
+                destroyBtn.style.display = 'none';
+            } else {
+                undoBtn.style.display = 'flex';
+                destroyBtn.style.display = 'flex';
+            }
+
+            best = localStorage.getItem('cube2048_3x3_best_' + currentMode) || 0;
+            document.getElementById('best').innerText = best;
+
+            if (!loadGameState()) {
+                resetGame(); 
+            } else {
+                updateLevelUI(); 
+            }
+        }
+
+        function goHome() {
+            if (isFlipping || isModalOpen) return;
+            if (isDestroyMode) toggleDestroyMode(false);
+            
+            saveGameState();
+            
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('home-ui').style.display = 'flex';
+            hideBanner();
+        }
 
         /* --- Economy Functions --- */
         function addCoinsFromScore(points) {
@@ -448,9 +638,11 @@
             const gravBtn = document.getElementById('gravity-btn');
             const destroyBtn = document.getElementById('destroy-btn');
             
-            undoBtn.disabled = (history.length === 0 || totalCoins < 2 || isFlipping || isModalOpen || isDestroyMode);
+            if (currentMode !== 'hard') {
+                undoBtn.disabled = (history.length === 0 || totalCoins < 5 || isFlipping || isModalOpen || isDestroyMode);
+                destroyBtn.disabled = (totalCoins < 10 || isFlipping || isModalOpen);
+            }
             gravBtn.disabled = (totalCoins < 1 || isFlipping || isModalOpen || isDestroyMode);
-            destroyBtn.disabled = (totalCoins < 2 || isFlipping || isModalOpen);
         }
 
         /* --- Block Destroyer Power --- */
@@ -458,7 +650,7 @@
             if (typeof forceState === "boolean") {
                 isDestroyMode = forceState;
             } else {
-                if (isFlipping || isModalOpen || totalCoins < 2) return;
+                if (isFlipping || isModalOpen || totalCoins < 10 || currentMode === 'hard') return;
                 isDestroyMode = !isDestroyMode;
             }
             
@@ -526,12 +718,17 @@
             const tGrav = Math.floor((level - 1) / 4) + 1;
 
             let powerObj = {};
-            if (level % 2 === 0) {
-                let tTarget = Math.floor(level / 8) + 1;
-                powerObj = { id: 'destroyer', target: tTarget, unlocked: false, desc: `Use Block Destroyer ${tTarget} time${tTarget > 1 ? 's' : ''}`, icon: "💥" };
+            if (currentMode === 'hard') {
+                const extraScore = Math.floor(350 * Math.pow(1.12, level - 1));
+                powerObj = { id: 'score_hard', target: extraScore, unlocked: false, desc: `Earn ${extraScore} bonus score`, icon: "🔥" };
             } else {
-                let uTarget = Math.floor(level / 5) + 1;
-                powerObj = { id: 'undo', target: uTarget, unlocked: false, desc: `Use Undo ${uTarget} time${uTarget > 1 ? 's' : ''}`, icon: "↩️" };
+                if (level % 2 === 0) {
+                    let tTarget = Math.floor(level / 8) + 1;
+                    powerObj = { id: 'destroyer', target: tTarget, unlocked: false, desc: `Use Block Destroyer ${tTarget} time${tTarget > 1 ? 's' : ''}`, icon: "💥" };
+                } else {
+                    let uTarget = Math.floor(level / 5) + 1;
+                    powerObj = { id: 'undo', target: uTarget, unlocked: false, desc: `Use Undo ${uTarget} time${uTarget > 1 ? 's' : ''}`, icon: "↩️" };
+                }
             }
 
             return {
@@ -579,12 +776,12 @@
         }
 
         function skipObjective(key, tileIndex = null) {
-            if (totalCoins < 10) {
+            if (totalCoins < 25) {
                 showToast("Not enough coins to skip!", "⚠️", true);
                 return;
             }
             
-            totalCoins -= 10;
+            totalCoins -= 25;
             localStorage.setItem('cube2048_coins', totalCoins);
             updateCoinUI();
 
@@ -598,6 +795,7 @@
                 if (key === 'power') {
                     if (objectives.power.id === 'undo') levelStats.undoUses = objectives.power.target;
                     if (objectives.power.id === 'destroyer') levelStats.destroyerUses = objectives.power.target;
+                    if (objectives.power.id === 'score_hard') levelStats.scoreEarned = Math.max(levelStats.scoreEarned, objectives.power.target);
                 }
             }
 
@@ -653,7 +851,12 @@
             }
 
             if (!objectives.power.unlocked) {
-                let uses = objectives.power.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses;
+                let pId = objectives.power.id;
+                let uses = 0;
+                if (pId === 'undo') uses = levelStats.undoUses;
+                else if (pId === 'destroyer') uses = levelStats.destroyerUses;
+                else if (pId === 'score_hard') uses = levelStats.scoreEarned;
+
                 if (uses >= objectives.power.target) {
                     objectives.power.unlocked = true;
                     showToast(objectives.power.desc + ' Completed!', objectives.power.icon);
@@ -667,7 +870,10 @@
                 renderObjectivesList();
             }
 
-            if (newlyUnlocked && !isModalOpen) {
+            let allTilesCleared = objectives.tiles.every(t => t.unlocked);
+            let fullyCleared = (allTilesCleared && objectives.score.unlocked && objectives.gravity.unlocked && objectives.power.unlocked);
+
+            if (newlyUnlocked && !isModalOpen && !fullyCleared) {
                 document.getElementById('obj-btn').classList.add('alert');
                 document.getElementById('obj-notif').style.display = 'block';
             }
@@ -695,7 +901,7 @@
             list.innerHTML = '';
             
             const createObjHTML = (obj, key, title, progressText, tileIndex = null) => {
-                const skipStr = !obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tileIndex})">Skip 10 🪙</button>` : `<div class="done-mark">✔️</div>`;
+                const skipStr = !obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tileIndex})">Skip 25 🪙</button>` : `<div class="done-mark">✔️</div>`;
                 return `
                     <div class="obj-item ${obj.unlocked ? 'unlocked' : ''}">
                         <div class="obj-icon">${obj.icon}</div>
@@ -727,10 +933,19 @@
             let pObj = objectives.power;
             let pProg = '';
             if (!pObj.unlocked) {
-                let currentUses = pObj.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses;
+                let currentUses = 0;
+                if (pObj.id === 'undo') currentUses = levelStats.undoUses;
+                else if (pObj.id === 'destroyer') currentUses = levelStats.destroyerUses;
+                else if (pObj.id === 'score_hard') currentUses = levelStats.scoreEarned;
+
                 pProg = `(${currentUses} / ${pObj.target})`;
             }
-            list.innerHTML += createObjHTML(pObj, 'power', pObj.id === 'undo' ? 'TIME TRAVEL' : 'DEMOLITION', pProg);
+            let pTitle = 'POWER USAGE';
+            if (pObj.id === 'undo') pTitle = 'TIME TRAVEL';
+            if (pObj.id === 'destroyer') pTitle = 'DEMOLITION';
+            if (pObj.id === 'score_hard') pTitle = 'BONUS SCORE';
+
+            list.innerHTML += createObjHTML(pObj, 'power', pTitle, pProg);
         }
 
         function openObjectives() {
@@ -784,11 +999,11 @@
                 objectives: objectives,
                 highestScoreThisGame: highestScoreThisGame
             };
-            localStorage.setItem('cube2048_3x3_state', JSON.stringify(state));
+            localStorage.setItem('cube2048_3x3_state_' + currentMode, JSON.stringify(state));
         }
 
         function loadGameState() {
-            const saved = localStorage.getItem('cube2048_3x3_state');
+            const saved = localStorage.getItem('cube2048_3x3_state_' + currentMode);
             if (saved) {
                 try {
                     const state = JSON.parse(saved);
@@ -1077,6 +1292,9 @@
             
             const handleAction = (clientX, clientY) => {
                 if (isFlipping || isModalOpen) return;
+                
+                if (currentMode !== 'easy' && !isDestroyMode) return; 
+
                 const rect = renderer.domElement.getBoundingClientRect();
                 mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
                 mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -1224,6 +1442,7 @@
             
             let changed = false;
             let moveScore = 0;
+            let moveMergedVals =[];
             
             if (direction === 'down') {
                 for (let x = 0; x < GRID_SIZE; x++) {
@@ -1238,6 +1457,11 @@
                         for (let y = 0; y < GRID_SIZE; y++) {
                             if (grid[x][y][z] !== newLine[y]) changed = true;
                             grid[x][y][z] = newLine[y];
+                            
+                            // track merges for sounds
+                            if (newLine[y] && !line.includes(newLine[y])) {
+                                moveMergedVals.push(newLine[y].value);
+                            }
                         }
                         score += res.scoreGained;
                     }
@@ -1261,6 +1485,10 @@
                             for (let x = 0; x < GRID_SIZE; x++) {
                                 if (grid[x][y][z] !== newLine[x]) changed = true;
                                 grid[x][y][z] = newLine[x];
+
+                                if (newLine[x] && !line.includes(newLine[x])) {
+                                    moveMergedVals.push(newLine[x].value);
+                                }
                             }
                             score += res.scoreGained;
                         }
@@ -1279,6 +1507,10 @@
                             for (let z = 0; z < GRID_SIZE; z++) {
                                 if (grid[x][y][z] !== newLine[z]) changed = true;
                                 grid[x][y][z] = newLine[z];
+
+                                if (newLine[z] && !line.includes(newLine[z])) {
+                                    moveMergedVals.push(newLine[z].value);
+                                }
                             }
                             score += res.scoreGained;
                         }
@@ -1293,7 +1525,7 @@
                 
                 spawnBlock(); 
                 
-                if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best', best); }
+                if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best_' + currentMode, best); }
                 if (score > highestScoreThisGame) {
                     addCoinsFromScore(score - highestScoreThisGame);
                     highestScoreThisGame = score;
@@ -1301,6 +1533,13 @@
 
                 sync();
                 checkObjectives();
+
+                // Play Audio
+                if (moveMergedVals.includes(2048)) {
+                    playZenithSound();
+                } else if (moveScore > 0) {
+                    playMergeSound();
+                }
                 
                 let zenithFound = false;
                 for (let x = 0; x < GRID_SIZE; x++) {
@@ -1354,7 +1593,8 @@
                 score: score, 
                 moveCount: moveCount, 
                 iconFlipped: gravityInverted,
-                levelStats: { ...levelStats },
+                levelStats: JSON.parse(JSON.stringify(levelStats)),
+                objectives: JSON.parse(JSON.stringify(objectives)),
                 currentLevel: currentLevel
             });
             if (history.length > 30) history.shift();
@@ -1362,13 +1602,13 @@
         }
 
         function undoMove() {
-            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 2) return;
+            if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 5 || currentMode === 'hard') return;
             
             if (isDestroyMode) {
                 toggleDestroyMode(false);
             }
 
-            totalCoins -= 2;
+            totalCoins -= 5;
             localStorage.setItem('cube2048_coins', totalCoins);
 
             const currentObjs = JSON.stringify(objectives);
@@ -1525,17 +1765,16 @@
         function click(pos) {
             if (isFlipping || isModalOpen) return;
             
-            // Handle Destroy Mode
             if (isDestroyMode) {
                 if (grid[pos[0]][pos[1]][pos[2]]) {
-                    if (totalCoins < 2) return;
+                    if (totalCoins < 10) return;
 
                     saveHistory(); 
                     
                     const currentObjs = JSON.stringify(objectives);
                     levelStats.destroyerUses = (levelStats.destroyerUses || 0) + 1;
 
-                    totalCoins -= 2;
+                    totalCoins -= 10;
                     localStorage.setItem('cube2048_coins', totalCoins);
                     updateCoinUI();
                     
@@ -1548,13 +1787,17 @@
                     spawnBlock();
                     
                     sync();
-                    checkGameState();
-                    saveGameState();
+                    
+                    playDestroySound();
                     
                     checkObjectives(); 
+                    checkGameState();
+                    saveGameState();
                 }
                 return;
             }
+
+            if (currentMode !== 'easy') return;
 
             if (!selected) { selected = pos; }
             else if (selected[0] === pos[0] && selected[1] === pos[1] && selected[2] === pos[2]) { selected = null; }
@@ -1568,7 +1811,7 @@
                     score += b1.value; 
                     levelStats.scoreEarned += b1.value;
                     moveCount++;
-                    if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best', best); }
+                    if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best_' + currentMode, best); }
                     
                     if (score > highestScoreThisGame) {
                         addCoinsFromScore(score - highestScoreThisGame);
@@ -1582,6 +1825,12 @@
                     spawnBlock(); 
                     selected = null;
                     
+                    if (v === 2048) {
+                        playZenithSound();
+                    } else {
+                        playMergeSound();
+                    }
+
                     checkObjectives();
 
                     if (v === 2048 && !hasWon) {
@@ -1596,23 +1845,20 @@
             saveGameState();
         }
 
-        function initGame() {
+        // Boot system to Home Menu
+        function initApp() {
             try {
-                updateCoinUI();
                 init(); 
-                document.getElementById('best').innerText = best;
-                if (!loadGameState()) {
-                    resetGame(); 
-                } else {
-                    updateLevelUI(); 
-                }
+                updateCoinUI();
+                document.getElementById('game-ui').style.display = 'none';
+                document.getElementById('home-ui').style.display = 'flex';
             } catch (e) {
                 console.error(e);
                 alert("Critical System Failure: " + e.message);
             }
         }
 
-        window.onload = initGame;
+        window.onload = initApp;
     </script>
 </body>
 </html>
