@@ -23,7 +23,6 @@
             overflow: hidden;
         }
 
-        /* Game wrapper takes up all available space */
         #game-wrapper {
             position: relative;
             flex: 1;
@@ -138,7 +137,7 @@
             white-space: nowrap;
         }
 
-        /* Floating Banner */
+        /* Floating Banners */
         .banner {
             position: absolute;
             top: 120px;
@@ -163,7 +162,6 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.7);
             pointer-events: none; 
         }
-        
         .banner.show { transform: translate(-50%, 0) scale(1); opacity: 1; visibility: visible; }
         .banner.interactive { pointer-events: auto; }
         
@@ -184,6 +182,41 @@
             transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
         }
         .banner-btn:active { transform: scale(0.92); }
+
+        /* Milestone Banner - Celebratory New Tile */
+        #milestone-banner {
+            position: fixed;
+            top: 25%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            opacity: 0; visibility: hidden;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.95) 100%);
+            padding: 20px 50px;
+            border-radius: 30px;
+            z-index: 10004;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 40px rgba(251,191,36,0.5);
+            border: 2px solid rgba(255,255,255,0.8);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+        #milestone-banner.show { transform: translate(-50%, -50%) scale(1); opacity: 1; visibility: visible; }
+        .milestone-title { font-size: 14px; font-weight: 900; color: rgba(0,0,0,0.6); letter-spacing: 2px; text-transform: uppercase; margin-bottom: -5px; }
+        .milestone-value { font-size: 80px; font-weight: 900; color: white; text-shadow: 0 4px 15px rgba(0,0,0,0.3); font-variant-numeric: tabular-nums; line-height: 1; }
+
+        /* Confetti Animation */
+        .confetti-piece {
+            position: fixed;
+            top: -20px;
+            z-index: 10003;
+            pointer-events: none;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { 
+                transform: translate3d(var(--sway), 100vh, 0) rotate3d(1, 1, 1, 720deg); 
+                opacity: 0; 
+            }
+        }
 
         /* Modals & Overlays */
         .modal-overlay {
@@ -306,6 +339,8 @@
             .obj-item { padding: 10px 12px; }
             .skip-btn { padding: 5px 8px; font-size: 9px; }
             .home-title { font-size: 42px; }
+            #milestone-banner { padding: 20px 40px; }
+            .milestone-value { font-size: 60px; }
         }
     </style>
 </head>
@@ -409,6 +444,12 @@
                 </div>
             </div>
 
+            <!-- Milestone Celebration Banner -->
+            <div id="milestone-banner">
+                <div class="milestone-title">NEW TILE UNLOCKED!</div>
+                <div class="milestone-value" id="milestone-val">64</div>
+            </div>
+
             <div class="banner" id="banner">
                 <div class="banner-text">
                     <div class="banner-title" id="banner-title">STALEMATE</div>
@@ -483,9 +524,10 @@
         let history =[], moveCount = 0;
         let selected = null, gravityInverted = false, isDestroyMode = false; 
         
-        // Economy & Anti-Glitch Trackers
+        // Economy, Milestones & Anti-Glitch Trackers
         let totalCoins = parseInt(localStorage.getItem('cube2048_coins')) || 0;
         let coinProgress = parseInt(localStorage.getItem('cube2048_coin_progress')) || 0;
+        let highestTileAchieved = parseInt(localStorage.getItem('cube2048_highest_tile')) || 8;
         let highestScoreThisGame = 0; 
 
         // Level & Objective System
@@ -549,11 +591,11 @@
             setTimeout(() => playTone(80, 'square', 0.4, 0.15), 50);
         }
 
-        function playZenithSound() {
-            playTone(523.25, 'sine', 0.3, 0.15); 
-            setTimeout(() => playTone(659.25, 'sine', 0.3, 0.15), 150); 
-            setTimeout(() => playTone(783.99, 'sine', 0.3, 0.15), 300); 
-            setTimeout(() => playTone(1046.50, 'sine', 0.8, 0.2), 450); 
+        function playMilestoneSound() {
+            playTone(523.25, 'square', 0.1, 0.1); // C5
+            setTimeout(() => playTone(659.25, 'square', 0.1, 0.1), 100); // E5
+            setTimeout(() => playTone(783.99, 'square', 0.1, 0.1), 200); // G5
+            setTimeout(() => playTone(1046.50, 'square', 0.6, 0.15), 300); // C6
         }
         
         // Three.js Objects
@@ -563,6 +605,7 @@
         let isFlipping = false, flipProgress = 0;
         let hasWon = false, currentBannerType = '';
         let bannerTimeout = null;
+        let milestoneTimeout = null;
 
         const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
@@ -642,6 +685,7 @@
                 undoBtn.disabled = (history.length === 0 || totalCoins < 2 || isFlipping || isModalOpen || isDestroyMode);
                 destroyBtn.disabled = (totalCoins < 2 || isFlipping || isModalOpen);
             }
+            // Gravity is free now, only disabled when UI/Animations block it
             gravBtn.disabled = (isFlipping || isModalOpen || isDestroyMode);
         }
 
@@ -662,6 +706,42 @@
                 btn.classList.remove('alert');
             }
             updateButtonStates(); 
+        }
+
+        /* --- Confetti & Milestone Animations --- */
+        function fireConfetti() {
+            const colors =['#ff3b30', '#3498db', '#f39c12', '#2ecc71', '#9b59b6', '#f1c40f', '#22d3ee', '#fbbf24'];
+            for(let i=0; i<60; i++) {
+                let conf = document.createElement('div');
+                conf.className = 'confetti-piece';
+                conf.style.left = (Math.random() * 100) + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                const w = Math.random() * 8 + 6;
+                const h = Math.random() * 12 + 8;
+                conf.style.width = w + 'px';
+                conf.style.height = h + 'px';
+                
+                conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                conf.style.animationDelay = (Math.random() * 0.2) + 's';
+                conf.style.setProperty('--sway', (Math.random() * 200 - 100) + 'px');
+                
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 4500);
+            }
+        }
+
+        function showMilestone(val) {
+            playMilestoneSound();
+            fireConfetti();
+            const banner = document.getElementById('milestone-banner');
+            document.getElementById('milestone-val').innerText = val;
+            banner.classList.add('show');
+            
+            if(milestoneTimeout) clearTimeout(milestoneTimeout);
+            milestoneTimeout = setTimeout(() => {
+                banner.classList.remove('show');
+            }, 3000);
         }
 
         /* --- Level & Objectives Logic --- */
@@ -710,9 +790,13 @@
                 target: t.count,
                 current: 0,
                 unlocked: false,
-                desc: `Have ${t.count}x [${t.val}] tile${t.count > 1 ? 's' : ''} on board`,
+                desc: `Have ${t.count}x[${t.val}] tile${t.count > 1 ? 's' : ''} on board`,
                 icon: "👑"
             }));
+
+            let maxTile = Math.max(...tilesReq.map(t => t.val));
+            let baseMoveScore = maxTile / 2;
+            const tMoveScore = Math.ceil(baseMoveScore / 50) * 50;
 
             const tScore = Math.floor(250 * Math.pow(1.12, level - 1));
             const tGrav = Math.floor((level - 1) / 4) + 1;
@@ -733,6 +817,7 @@
 
             return {
                 tiles: tiles,
+                moveScore: { target: tMoveScore, unlocked: false, desc: `Score ${tMoveScore}+ points in one move`, icon: "☄️" },
                 score: { target: tScore, unlocked: false, desc: `Earn ${tScore} score this level`, icon: "🏅" },
                 gravity: { target: tGrav, unlocked: false, desc: `Use invert gravity ${tGrav} time${tGrav > 1 ? 's' : ''}`, icon: "🌀" },
                 power: powerObj
@@ -759,8 +844,8 @@
 
         function checkLevelClear() {
             let allTilesCleared = objectives.tiles.every(t => t.unlocked);
-            if (allTilesCleared && objectives.score.unlocked && 
-                objectives.gravity.unlocked && objectives.power.unlocked) {
+            if (allTilesCleared && objectives.moveScore.unlocked && 
+                objectives.score.unlocked && objectives.gravity.unlocked && objectives.power.unlocked) {
                 
                 document.getElementById('obj-btn').classList.remove('alert');
                 document.getElementById('obj-notif').style.display = 'none';
@@ -791,6 +876,7 @@
             } else {
                 objectives[key].unlocked = true;
                 if (key === 'score') levelStats.scoreEarned = objectives[key].target;
+                if (key === 'moveScore') ; 
                 if (key === 'gravity') levelStats.gravityUses = objectives[key].target;
                 if (key === 'power') {
                     if (objectives.power.id === 'undo') levelStats.undoUses = objectives.power.target;
@@ -805,7 +891,7 @@
             checkLevelClear();
         }
 
-        function checkObjectives() {
+        function checkObjectives(moveScore = 0) {
             let newlyUnlocked = false;
             let progressChanged = false;
             
@@ -834,12 +920,18 @@
                 }
             }
             
+            if (!objectives.moveScore.unlocked && moveScore >= objectives.moveScore.target) {
+                objectives.moveScore.unlocked = true;
+                showToast(objectives.moveScore.desc + ' Completed!', objectives.moveScore.icon);
+                newlyUnlocked = true;
+            }
+            
             if (!objectives.score.unlocked) {
                 if (levelStats.scoreEarned >= objectives.score.target) {
                     objectives.score.unlocked = true;
                     showToast(objectives.score.desc + ' Completed!', objectives.score.icon);
                     newlyUnlocked = true;
-                } else {
+                } else if (moveScore > 0) {
                     progressChanged = true;
                 }
             }
@@ -871,7 +963,7 @@
             }
 
             let allTilesCleared = objectives.tiles.every(t => t.unlocked);
-            let fullyCleared = (allTilesCleared && objectives.score.unlocked && objectives.gravity.unlocked && objectives.power.unlocked);
+            let fullyCleared = (allTilesCleared && objectives.moveScore.unlocked && objectives.score.unlocked && objectives.gravity.unlocked && objectives.power.unlocked);
 
             if (newlyUnlocked && !isModalOpen && !fullyCleared) {
                 document.getElementById('obj-btn').classList.add('alert');
@@ -922,6 +1014,9 @@
                 list.innerHTML += createObjHTML(t, 'tile', 'TILE SYNTHESIS', pText, idx);
             });
             
+            let msObj = objectives.moveScore;
+            list.innerHTML += createObjHTML(msObj, 'moveScore', 'SINGLE MOVE', '');
+
             let sObj = objectives.score;
             let sProg = sObj.unlocked ? '' : `(${levelStats.scoreEarned} / ${sObj.target})`;
             list.innerHTML += createObjHTML(sObj, 'score', 'TOTAL SCORE', sProg);
@@ -1030,7 +1125,7 @@
                     sync();
                     checkGameState();
                     
-                    checkObjectives();
+                    checkObjectives(0);
                     return true;
                 } catch (e) {
                     console.error("Failed to load state", e);
@@ -1518,30 +1613,30 @@
                 }
 
                 sync();
-                checkObjectives();
+                checkObjectives(moveScore);
                 
-                if (moveScore > 0) {
-                    let hasZenith = false;
-                    for (let x = 0; x < GRID_SIZE; x++) {
-                        for (let y = 0; y < GRID_SIZE; y++) {
-                            for (let z = 0; z < GRID_SIZE; z++) {
-                                if (grid[x][y][z] && grid[x][y][z].value === 2048) hasZenith = true;
-                            }
-                        }
-                    }
-                    if (hasZenith) playZenithSound();
-                    else playMergeSound();
-                }
-                
-                let zenithFound = false;
+                let moveMaxVal = 0;
                 for (let x = 0; x < GRID_SIZE; x++) {
                     for (let y = 0; y < GRID_SIZE; y++) {
                         for (let z = 0; z < GRID_SIZE; z++) {
-                            if (grid[x][y][z] && grid[x][y][z].value === 2048) zenithFound = true;
+                            if (grid[x][y][z]) moveMaxVal = Math.max(moveMaxVal, grid[x][y][z].value);
                         }
                     }
                 }
+
+                let isMilestone = false;
+                if (moveMaxVal > highestTileAchieved && moveMaxVal >= 16) {
+                    highestTileAchieved = moveMaxVal;
+                    localStorage.setItem('cube2048_highest_tile', highestTileAchieved);
+                    showMilestone(highestTileAchieved);
+                    isMilestone = true;
+                }
+
+                if (!isMilestone && moveScore > 0) {
+                    playMergeSound();
+                }
                 
+                let zenithFound = (moveMaxVal >= 2048);
                 if (zenithFound && !hasWon) {
                     hasWon = true;
                     showBanner('zenith');
@@ -1556,13 +1651,17 @@
         }
 
         function toggleGravity() {
-            if (isFlipping || isModalOpen) return;
+            if (isFlipping || isModalOpen || totalCoins < 1) return;
             
             if (isDestroyMode) {
                 toggleDestroyMode(false);
             }
 
             saveHistory(); 
+
+            totalCoins -= 1;
+            localStorage.setItem('cube2048_coins', totalCoins);
+            updateCoinUI();
 
             isFlipping = true;
             flipProgress = 0;
@@ -1571,7 +1670,7 @@
             updateButtonStates();
             
             levelStats.gravityUses++;
-            checkObjectives();
+            checkObjectives(0);
         }
 
         function saveHistory() {
@@ -1625,7 +1724,7 @@
             checkGameState();
             saveGameState();
             
-            checkObjectives();
+            checkObjectives(0);
         }
 
         function resetGame() {
@@ -1702,7 +1801,7 @@
                 m.userData.val = b.value;
             }
             
-            for (const [id, m] of blockMeshes.entries()) {
+            for (const[id, m] of blockMeshes.entries()) {
                 if (!ids.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); }
             }
             document.getElementById('score').innerText = score;
@@ -1753,7 +1852,6 @@
         function click(pos) {
             if (isFlipping || isModalOpen) return;
             
-            // Handle Destroy Mode
             if (isDestroyMode) {
                 if (grid[pos[0]][pos[1]][pos[2]]) {
                     if (totalCoins < 2) return;
@@ -1779,7 +1877,7 @@
                     
                     playDestroySound();
                     
-                    checkObjectives(); 
+                    checkObjectives(0); 
                     checkGameState();
                     saveGameState();
                 }
@@ -1813,14 +1911,27 @@
                     applyGravity();
                     spawnBlock(); 
                     selected = null;
-                    
-                    if (v === 2048) {
-                        playZenithSound();
-                    } else {
-                        playMergeSound();
+
+                    let moveMaxVal = 0;
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        for (let y = 0; y < GRID_SIZE; y++) {
+                            for (let z = 0; z < GRID_SIZE; z++) {
+                                if (grid[x][y][z]) moveMaxVal = Math.max(moveMaxVal, grid[x][y][z].value);
+                            }
+                        }
                     }
 
-                    checkObjectives();
+                    let isMilestone = false;
+                    if (moveMaxVal > highestTileAchieved && moveMaxVal >= 16) {
+                        highestTileAchieved = moveMaxVal;
+                        localStorage.setItem('cube2048_highest_tile', highestTileAchieved);
+                        showMilestone(highestTileAchieved);
+                        isMilestone = true;
+                    }
+                    
+                    if (!isMilestone) playMergeSound();
+
+                    checkObjectives(b1.value);
 
                     if (v === 2048 && !hasWon) {
                         hasWon = true;
@@ -1834,7 +1945,6 @@
             saveGameState();
         }
 
-        // Boot system to Home Menu
         function initApp() {
             try {
                 init(); 
