@@ -18,12 +18,34 @@
             display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
         }
 
+        /* SVG click-through safety */
+        svg { pointer-events: none; }
+
         /* Game wrapper provides safe space from ALL edges */
         #game-wrapper {
             position: relative; flex: 1; overflow: hidden; border-radius: 16px;
             margin: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
             background-color: #050814; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
+
+        /* ANDROID ADVERTISEMENT UI */
+        #android-ad-ui {
+            position: fixed; inset: 0; z-index: 200000; background: radial-gradient(circle at center, #1e1b4b 0%, #02040a 100%);
+            display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; overflow: hidden;
+        }
+        .ad-content { position: relative; z-index: 10; max-width: 450px; animation: slideInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .ad-header { font-size: 56px; font-weight: 900; font-style: italic; background: linear-gradient(135deg, #818cf8, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 10px 20px rgba(34, 211, 238, 0.3)); line-height: 1.1; margin-bottom: 15px; letter-spacing: -2px; }
+        .ad-subtitle { font-size: 16px; color: #cbd5e1; margin-bottom: 30px; font-weight: 600; line-height: 1.5; }
+        .ad-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; text-align: left; background: rgba(255,255,255,0.05); padding: 20px 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        .ad-features span { color: #fff; font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+        .ad-btn { display: inline-block; background: linear-gradient(135deg, #22c55e, #10b981); color: white; text-decoration: none; padding: 20px 35px; border-radius: 35px; font-weight: 900; font-size: 18px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s, box-shadow 0.2s; pointer-events: auto; }
+        .ad-btn:active { transform: scale(0.95); }
+        .ad-bg-cube { position: absolute; border-radius: 25%; background: linear-gradient(135deg, rgba(129, 140, 248, 0.15), rgba(34, 211, 238, 0.15)); border: 1px solid rgba(255,255,255,0.1); animation: floatCube 10s infinite linear; z-index: 1;}
+        .c1 { width: 120px; height: 120px; top: 5%; left: 5%; animation-duration: 18s; }
+        .c2 { width: 180px; height: 180px; bottom: 10%; right: -5%; animation-duration: 25s; animation-direction: reverse; }
+        .c3 { width: 80px; height: 80px; top: 40%; right: 15%; animation-duration: 15s; }
+        @keyframes floatCube { 0% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-30px) rotate(180deg); } 100% { transform: translateY(0) rotate(360deg); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
 
         #update-ui {
             display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; text-align: center;
@@ -144,7 +166,7 @@
             background: linear-gradient(to top, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0) 100%);
             display: flex; align-items: flex-end; justify-content: center; width: 100%; box-sizing: border-box;
         }
-        .ui-bottom .btn-group { gap: 20px; }
+        .ui-bottom .btn-group { gap: 20px; margin-bottom: 5px; }
 
         /* Floating Banners */
         .banner {
@@ -180,28 +202,28 @@
 
         /* Milestone Banner */
         #milestone-banner {
-            position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%) scale(0.5); opacity: 0; visibility: hidden;
+            position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
+            opacity: 0; visibility: hidden;
             background: linear-gradient(135deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.95) 100%);
             padding: 20px 50px; border-radius: 30px; z-index: 10004; text-align: center;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 40px rgba(251,191,36,0.5);
-            border: 2px solid rgba(255,255,255,0.8); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none;
+            border: 2px solid rgba(255,255,255,0.8);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none;
         }
         #milestone-banner.show { transform: translate(-50%, -50%) scale(1); opacity: 1; visibility: visible; }
         .milestone-title { font-size: 14px; font-weight: 900; color: rgba(0,0,0,0.6); letter-spacing: 2px; text-transform: uppercase; margin-bottom: -5px; }
         .milestone-value { font-size: 80px; font-weight: 900; color: white; text-shadow: 0 4px 15px rgba(0,0,0,0.3); font-variant-numeric: tabular-nums; line-height: 1; }
 
-        /* Warning Banner */
-        #warning-banner {
-            position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%) scale(0.5); opacity: 0; visibility: hidden;
-            background: linear-gradient(135deg, rgba(220, 38, 38, 0.95) 0%, rgba(153, 27, 27, 0.95) 100%);
-            padding: 20px 40px; border-radius: 24px; z-index: 10005; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 40px rgba(220,38,38,0.5);
-            border: 2px solid rgba(255,255,255,0.8); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none;
-            width: 80%; max-width: 400px;
+        /* 256 Info Banner */
+        #info-banner {
+            position: absolute; top: 120px; left: 50%; transform: translate(-50%, -20px);
+            background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;
+            padding: 12px 24px; border-radius: 20px; font-weight: 800; font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10005; pointer-events: none;
+            opacity: 0; visibility: hidden; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: center; white-space: nowrap; border: 2px solid rgba(255,255,255,0.2);
         }
-        #warning-banner.show { transform: translate(-50%, -50%) scale(1); opacity: 1; visibility: visible; }
-        .warning-title { font-size: 22px; font-weight: 900; color: white; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        .warning-desc { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.95); line-height: 1.4; }
+        #info-banner.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 
         /* Confetti Animation */
         .confetti-piece { position: absolute; top: -20px; z-index: 10003; pointer-events: none; animation: fall linear forwards; }
@@ -212,9 +234,9 @@
             position: absolute; inset: 0; z-index: 10000; background: rgba(2, 4, 15, 0.75); 
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             display: flex; align-items: center; justify-content: center;
-            opacity: 0; visibility: hidden; transition: all 0.3s ease; pointer-events: auto;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease; pointer-events: none;
         }
-        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-overlay.show { opacity: 1; visibility: visible; pointer-events: auto; }
         
         .modal-content {
             background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.1);
@@ -307,13 +329,15 @@
 
             .ui-top { padding: max(15px, env(safe-area-inset-top)) 15px 15px; gap: 12px; }
             .top-stats-row { flex-direction: column; gap: 12px; }
-            .score-group { justify-content: center; width: 100%; flex-wrap: wrap; }
-            .top-stats-row .btn-group { justify-content: center; width: 100%; flex-wrap: wrap; }
+            
+            .score-group { justify-content: center; width: 100%; flex-wrap: nowrap; gap: 6px; }
+            .score-box { min-width: auto; flex: 1; padding: 8px 4px; }
+            
+            .action-btn-group { justify-content: center; width: 100%; flex-wrap: nowrap; gap: 12px; margin-top: 4px;}
             
             .title { font-size: clamp(20px, 5.5vw, 26px); }
-            .score-box { min-width: 60px; padding: 8px 10px; }
             .value { font-size: 18px; }
-            .ui-bottom { padding: 15px; }
+            .ui-bottom { padding: 15px 15px max(15px, env(safe-area-inset-bottom)); }
             
             .banner { top: min(18vh, 160px); flex-direction: column; gap: 18px; padding: 24px; border-radius: 30px; text-align: center; }
             .banner-text { align-items: center; }
@@ -323,12 +347,27 @@
             .home-title { font-size: 42px; }
             #milestone-banner { padding: 20px 40px; }
             .milestone-value { font-size: 60px; }
-            #warning-banner { padding: 15px 25px; width: 90%; }
-            .warning-title { font-size: 18px; }
+            #info-banner { padding: 10px 18px; font-size: 12px; width: 85%; white-space: normal;}
         }
     </style>
 </head>
 <body>
+
+    <!-- ANDROID AD UI -->
+    <div id="android-ad-ui">
+        <div class="ad-bg-cube c1"></div>
+        <div class="ad-bg-cube c2"></div>
+        <div class="ad-bg-cube c3"></div>
+        <div class="ad-content">
+            <div class="ad-header">2048 CUBE</div>
+            <div class="ad-subtitle">The Ultimate Spatial Puzzle Experience is available for your Android device!</div>
+            <div class="ad-features">
+                <span>✨ Stunning 3D Graphics</span>
+                <span>🚀 Exclusive Power-Ups</span>
+            </div>
+            <a href="https://play.google.com/store/apps/details?id=com.aptonicindia.cube2048" class="ad-btn">DOWNLOAD ON PLAY STORE</a>
+        </div>
+    </div>
     
     <!-- Update Required Overlay -->
     <div id="update-ui">
@@ -425,10 +464,10 @@
                         </div>
                         <div class="score-box gold"><div class="label">Coins</div><div class="value" id="coins-display">🪙 0</div></div>
                         <div class="score-box"><div class="label">Current</div><div class="value" id="score">0</div></div>
-                        <div class="score-box"><div class="label">High Score</div><div class="value" id="best">0</div></div>
+                        <div class="score-box" id="score-box-best"><div class="label">High Score</div><div class="value" id="best">0</div></div>
                     </div>
                     
-                    <div class="btn-group" style="justify-content: flex-end; margin-top: 4px;">
+                    <div class="btn-group action-btn-group">
                         <!-- Undo Button -->
                         <button id="undo-btn" class="btn" onclick="undoMove()" disabled title="Undo Move (Cost: 2 Coins)">
                             <div class="cost-badge">2 🪙</div>
@@ -455,7 +494,7 @@
                         </button>
 
                         <!-- Reset Button -->
-                        <button class="btn" onclick="promptReset()" title="Reset Game">
+                        <button id="reset-btn" class="btn" onclick="promptReset()" title="Reset Game">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h5"/></svg>
                         </button>
                     </div>
@@ -469,11 +508,8 @@
                 <div class="milestone-value" id="milestone-val">64</div>
             </div>
 
-            <!-- Warning Banner -->
-            <div id="warning-banner">
-                <div class="warning-title">WARNING!</div>
-                <div class="warning-desc">256 Tile Reached! 2 blocks will now fall per move.</div>
-            </div>
+            <!-- 256 Info Banner -->
+            <div id="info-banner">256 Tile Reached! 2 blocks spawn per move.</div>
 
             <div class="banner" id="banner">
                 <div class="banner-text">
@@ -483,7 +519,7 @@
                 <button class="banner-btn" id="banner-btn" onclick="bannerAction()">RESTART</button>
             </div>
 
-            <!-- Bottom Controls (Arrow Buttons are now 20% larger) -->
+            <!-- Bottom Controls -->
             <div class="ui ui-bottom">
                 <div class="btn-group" style="gap: 20px;">
                     <button id="move-left-btn" class="btn arrow-btn" onclick="directionalMove('left')" title="Slide Blocks Left">
@@ -531,15 +567,14 @@
     
     <script>
         // --- App Version Control ---
-        const CURRENT_VERSION = 7; 
+        const CURRENT_VERSION = 8; 
         const VERSION_JSON_URL = "https://raw.githubusercontent.com/ishanjajoo/2048cube/main/version.json";
-        const APP_STORE_URL = "https://play.google.com/store/apps/details?id=com.aptonicindia.cube2048";
+        const APP_STORE_URL = "https://play.google.com/store/apps/details?id=com.aptonicindia.cube2048&pcampaignid=web_share";
 
         async function checkForUpdate() {
             try {
                 const res = await fetch(VERSION_JSON_URL + "?t=" + Date.now());
                 const data = await res.json();
-
                 if (data.force_update && CURRENT_VERSION < data.latest_version) {
                     document.getElementById('update-ui').style.display = 'flex';
                     document.getElementById('home-ui').style.display = 'none';
@@ -547,1814 +582,492 @@
                     return false;
                 }
                 return true;
-            } catch (e) {
-                console.log("Update check failed", e);
-                return true; 
-            }
+            } catch (e) { return true; }
         }
 
-        function updateApp() {
-            window.location.href = APP_STORE_URL;
-        }
+        function updateApp() { window.location.href = APP_STORE_URL; }
 
         // Game Constants
-        const GRID_SIZE = 3; 
-        const SPACING = 1.15;
-        const COLORS = { 
-            2: 0xf4f1ea, 4: 0x3498db, 8: 0xf39c12, 16: 0x2ecc71, 
-            32: 0xe74c3c, 64: 0x9b59b6, 128: 0xf1c40f, 256: 0xff2d55, 
-            512: 0xff3b30, 1024: 0x007aff, 2048: 0xffcc00
-        };
+        const GRID_SIZE = 3, SPACING = 1.15;
+        const COLORS = { 2: 0xf4f1ea, 4: 0x3498db, 8: 0xf39c12, 16: 0x2ecc71, 32: 0xe74c3c, 64: 0x9b59b6, 128: 0xf1c40f, 256: 0xff2d55, 512: 0xff3b30, 1024: 0x007aff, 2048: 0xffcc00 };
         
         // State Variables
-        let currentMode = 'easy'; 
-        let grid =[], score = 0, best = 0;
-        let history =[], moveCount = 0;
+        let currentMode = 'easy', grid =[], score = 0, best = 0, history =[], moveCount = 0;
         let selected = null, gravityInverted = false, isDestroyMode = false; 
-        
-        // Economy, Milestones & Bomb Trackers
-        let totalCoins = parseInt(localStorage.getItem('cube2048_coins')) || 0;
-        let coinProgress = parseInt(localStorage.getItem('cube2048_coin_progress')) || 0;
-        let highestTileAchieved = parseInt(localStorage.getItem('cube2048_highest_tile')) || 8;
-        let highestScoreThisGame = 0; 
-
-        let bombActive = false;
-        let bombTimer = 0;
-        let bombId = null;
-        let bombSpawnMove = -1;
-
-        // Level & Objective System
-        let currentLevel = 1;
-        let levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
-        let objectives = {};
-        window.isLevelingUp = false; 
-        let isModalOpen = false;
+        let totalCoins = parseInt(localStorage.getItem('cube2048_coins')) || 0, coinProgress = parseInt(localStorage.getItem('cube2048_coin_progress')) || 0;
+        let highestTileAchieved = parseInt(localStorage.getItem('cube2048_highest_tile')) || 8, highestScoreThisGame = 0; 
+        let bombActive = false, bombTimer = 0, bombId = null, bombSpawnMove = -1;
+        let currentLevel = 1, levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 }, objectives = {};
+        let isLevelingUp = false, isModalOpen = false;
 
         // Audio System
-        let audioCtx = null;
-        let isMuted = localStorage.getItem('cube2048_muted') === 'true';
+        let audioCtx = null, isMuted = localStorage.getItem('cube2048_muted') === 'true';
 
         function initAudio() {
             if (isMuted) return;
-            if (!audioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch(e) {}
         }
-
         function toggleMute() {
-            isMuted = !isMuted;
-            localStorage.setItem('cube2048_muted', isMuted);
+            isMuted = !isMuted; localStorage.setItem('cube2048_muted', isMuted);
             document.getElementById('sound-on').style.display = isMuted ? 'none' : 'block';
             document.getElementById('sound-off').style.display = isMuted ? 'block' : 'none';
             if (!isMuted) initAudio();
         }
-
         function playTone(freq, type, duration, volLevel = 0.1) {
-            if (isMuted) return;
-            initAudio(); 
-            if (!audioCtx) return;
-
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            
-            gain.gain.setValueAtTime(volLevel, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+            if (isMuted || !audioCtx) return; initAudio(); 
+            let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volLevel, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
         }
-
-        function playMergeSound() {
-            playTone(440, 'sine', 0.1, 0.1);
-            setTimeout(() => playTone(587.33, 'sine', 0.15, 0.1), 50); 
-        }
-
+        function playMergeSound() { playTone(440, 'sine', 0.1, 0.1); setTimeout(() => playTone(587.33, 'sine', 0.15, 0.1), 50); }
         function playExplosionSound() {
-            if (isMuted || !audioCtx) return;
-            initAudio(); 
-            
-            let bufferSize = audioCtx.sampleRate * 0.6; 
-            let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            let data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1; 
-            }
-            
-            let noiseSource = audioCtx.createBufferSource();
-            noiseSource.buffer = buffer;
-            
-            let filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(800, audioCtx.currentTime);
-            filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.6);
-            
-            let gainNode = audioCtx.createGain();
-            gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-            
-            noiseSource.connect(filter);
-            filter.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            noiseSource.start();
+            if (isMuted || !audioCtx) return; initAudio(); 
+            let bufferSize = audioCtx.sampleRate * 0.6, buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate), data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1; 
+            let noiseSource = audioCtx.createBufferSource(), filter = audioCtx.createBiquadFilter(), gainNode = audioCtx.createGain();
+            noiseSource.buffer = buffer; filter.type = 'lowpass'; filter.frequency.setValueAtTime(800, audioCtx.currentTime); filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.6);
+            gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+            noiseSource.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); noiseSource.start();
         }
-
-        function playMilestoneSound() {
-            playTone(523.25, 'square', 0.1, 0.1); // C5
-            setTimeout(() => playTone(659.25, 'square', 0.1, 0.1), 100); // E5
-            setTimeout(() => playTone(783.99, 'square', 0.1, 0.1), 200); // G5
-            setTimeout(() => playTone(1046.50, 'square', 0.6, 0.15), 300); // C6
-        }
+        function playMilestoneSound() { playTone(523.25, 'square', 0.1, 0.1); setTimeout(() => playTone(659.25, 'square', 0.1, 0.1), 100); setTimeout(() => playTone(783.99, 'square', 0.1, 0.1), 200); setTimeout(() => playTone(1046.50, 'square', 0.6, 0.15), 300); }
         
         // Three.js Objects
-        let scene, camera, renderer, raycaster, mouse, cubeGroup;
-        let blockMeshes = new Map(), textureCache = new Map();
+        let scene, camera, renderer, raycaster, mouse, cubeGroup, explosionGroup;
+        let blockMeshes = new Map(), textureCache = new Map(), activeExplosions =[];
         let rotX = 0.4, rotY = 0.6, isDrag = false, px = 0, py = 0, startX = 0, startY = 0;
-        let isFlipping = false, flipProgress = 0;
-        let hasWon = false, currentBannerType = '';
-        let bannerTimeout = null;
-        let milestoneTimeout = null;
-        let warningTimeout256 = null;
+        let isFlipping = false, flipProgress = 0, hasWon = false, currentBannerType = '', bannerTimeout = null, milestoneTimeout = null, warningTimeout256 = null;
+        const blockGeometry = new THREE.BoxGeometry(1, 1, 1), fragGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
 
-        const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const fragGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
-        let explosionGroup;
-        let activeExplosions =[];
-
-        if (isMuted) {
-            document.getElementById('sound-on').style.display = 'none';
-            document.getElementById('sound-off').style.display = 'block';
-        }
+        if (isMuted) { document.getElementById('sound-on').style.display = 'none'; document.getElementById('sound-off').style.display = 'block'; }
 
         /* --- Share Logic --- */
         function shareGame() {
-            let e = parseInt(localStorage.getItem('cube2048_3x3_best_easy')) || 0;
-            let m = parseInt(localStorage.getItem('cube2048_3x3_best_medium')) || 0;
-            let h = parseInt(localStorage.getItem('cube2048_3x3_best_hard')) || 0;
-            let highScore = Math.max(e, m, h);
-
-            const shareText = `Hi! I found this amazing game. My high score is ${highScore}. Try playing it! Download from: ${APP_STORE_URL}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: '2048 Cube 3D',
-                    text: shareText
-                }).catch(err => {
-                    copyToClipboard(shareText);
-                });
-            } else {
-                copyToClipboard(shareText);
-            }
+            let e = parseInt(localStorage.getItem('cube2048_3x3_best_easy')) || 0, m = parseInt(localStorage.getItem('cube2048_3x3_best_medium')) || 0, h = parseInt(localStorage.getItem('cube2048_3x3_best_hard')) || 0;
+            let shareText = `Hi! I found this amazing game. My high score is ${Math.max(e, m, h)}. Try playing it! Download from: ${APP_STORE_URL}`;
+            if (navigator.share) navigator.share({ title: '2048 Cube 3D', text: shareText }).catch(() => copyToClipboard(shareText)); else copyToClipboard(shareText);
         }
-
         function copyToClipboard(text) {
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast("Copied to clipboard!", "📋");
-                }).catch(err => fallbackCopyTextToClipboard(text));
-            } else {
-                fallbackCopyTextToClipboard(text);
-            }
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!", "📋")).catch(() => fallbackCopyTextToClipboard(text));
+            else fallbackCopyTextToClipboard(text);
         }
-
         function fallbackCopyTextToClipboard(text) {
-            let textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast("Copied to clipboard!", "📋");
-            } catch (err) {
-                showToast("Failed to copy", "⚠️", true);
-            }
-            document.body.removeChild(textArea);
+            let ta = document.createElement("textarea"); ta.value = text; ta.style.top = "0"; ta.style.left = "0"; ta.style.position = "fixed"; document.body.appendChild(ta); ta.focus(); ta.select();
+            try { document.execCommand('copy'); showToast("Copied to clipboard!", "📋"); } catch (err) { showToast("Failed to copy", "⚠️", true); } document.body.removeChild(ta);
         }
 
         /* --- Navigation Functions --- */
         function startGame(mode) {
-            initAudio(); 
-            currentMode = mode;
-            document.getElementById('home-ui').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'block';
-
-            let subtitleStr = "Click or Slide to merge";
-            if (mode === 'medium') subtitleStr = "Slide to merge ONLY";
-            if (mode === 'hard') subtitleStr = "Hard Mode: No click, No Powers";
-            document.getElementById('game-subtitle').innerText = subtitleStr;
-
+            initAudio(); currentMode = mode;
+            document.getElementById('home-ui').style.display = 'none'; document.getElementById('game-ui').style.display = 'block';
+            document.getElementById('game-subtitle').innerText = mode === 'medium' ? "Slide to merge ONLY" : mode === 'hard' ? "Hard Mode: No click, No Powers" : "Click or Slide to merge";
+            best = localStorage.getItem('cube2048_3x3_best_' + currentMode) || 0; document.getElementById('best').innerText = best;
+            
+            // Setup buttons specifically on start
             const undoBtn = document.getElementById('undo-btn');
             const destroyBtn = document.getElementById('destroy-btn');
             if (mode === 'hard') {
-                undoBtn.style.display = 'none';
-                destroyBtn.style.display = 'none';
+                if(undoBtn) undoBtn.style.display = 'none';
+                if(destroyBtn) destroyBtn.style.display = 'none';
             } else {
-                undoBtn.style.display = 'flex';
-                destroyBtn.style.display = 'flex';
+                if(undoBtn) undoBtn.style.display = 'flex';
+                if(destroyBtn) destroyBtn.style.display = 'flex';
             }
 
-            best = localStorage.getItem('cube2048_3x3_best_' + currentMode) || 0;
-            document.getElementById('best').innerText = best;
-
-            if (!loadGameState()) {
-                resetGame(); 
-            } else {
-                updateLevelUI(); 
-                openObjectives(); 
-            }
+            if (!loadGameState()) resetGame(); else { updateLevelUI(); openObjectives(); }
         }
 
         function goHome() {
             if (isFlipping || isModalOpen) return;
             if (isDestroyMode) toggleDestroyMode(false);
-            
             saveGameState();
-            
-            document.getElementById('game-ui').style.display = 'none';
-            document.getElementById('home-ui').style.display = 'flex';
-            hideBanner();
+            document.getElementById('game-ui').style.display = 'none'; document.getElementById('home-ui').style.display = 'flex'; hideBanner();
         }
 
         /* --- Economy Functions --- */
         function addCoinsFromScore(points) {
-            coinProgress += points;
-            let newCoins = Math.floor(coinProgress / 100);
-            if (newCoins > 0) {
-                totalCoins += newCoins;
-                coinProgress = coinProgress % 100;
-                localStorage.setItem('cube2048_coins', totalCoins);
-                localStorage.setItem('cube2048_coin_progress', coinProgress);
-                updateCoinUI();
-            }
+            coinProgress += points; let nc = Math.floor(coinProgress / 100);
+            if (nc > 0) { totalCoins += nc; coinProgress %= 100; localStorage.setItem('cube2048_coins', totalCoins); localStorage.setItem('cube2048_coin_progress', coinProgress); updateCoinUI(); }
         }
-
-        function updateCoinUI() {
-            document.getElementById('coins-display').innerText = '🪙 ' + totalCoins;
-            updateButtonStates();
-        }
+        function updateCoinUI() { document.getElementById('coins-display').innerText = '🪙 ' + totalCoins; updateButtonStates(); }
 
         function updateButtonStates() {
-            const undoBtn = document.getElementById('undo-btn');
-            const gravBtn = document.getElementById('gravity-btn');
-            const destroyBtn = document.getElementById('destroy-btn');
-            
-            if (currentMode !== 'hard') {
-                undoBtn.disabled = (history.length === 0 || totalCoins < 2 || isFlipping || isModalOpen || isDestroyMode);
-                destroyBtn.disabled = (totalCoins < 2 || isFlipping || isModalOpen);
-            }
-            gravBtn.disabled = (isFlipping || isModalOpen || isDestroyMode);
+            const uBtn = document.getElementById('undo-btn'), gBtn = document.getElementById('gravity-btn'), dBtn = document.getElementById('destroy-btn');
+            if (currentMode !== 'hard') { if(uBtn) uBtn.disabled = (history.length === 0 || totalCoins < 2 || isFlipping || isModalOpen || isDestroyMode); if(dBtn) dBtn.disabled = (totalCoins < 2 || isFlipping || isModalOpen || bombActive); }
+            if(gBtn) gBtn.disabled = (isFlipping || isModalOpen || isDestroyMode);
         }
 
         /* --- Block Destroyer Power --- */
         function toggleDestroyMode(forceState) {
-            if (typeof forceState === "boolean") {
-                isDestroyMode = forceState;
-            } else {
-                if (isFlipping || isModalOpen || totalCoins < 2 || currentMode === 'hard') return;
-                isDestroyMode = !isDestroyMode;
-            }
-            
+            if (typeof forceState === "boolean") isDestroyMode = forceState; else { if (isFlipping || isModalOpen || totalCoins < 2 || currentMode === 'hard' || bombActive) return; isDestroyMode = !isDestroyMode; }
             const btn = document.getElementById('destroy-btn');
-            if (isDestroyMode) {
-                btn.classList.add('alert');
-                if (selected) { selected = null; sync(); } 
-            } else {
-                btn.classList.remove('alert');
-            }
+            if (isDestroyMode) { if(btn) btn.classList.add('alert'); if (selected) { selected = null; sync(); } } else if(btn) btn.classList.remove('alert');
             updateButtonStates(); 
         }
 
         function createExplosion(x, y, z, val) {
-            const off = (GRID_SIZE - 1) / 2;
-            const wx = (x - off) * SPACING;
-            const wy = (y - off) * SPACING; 
-            const wz = (z - off) * SPACING;
-            
-            const color = COLORS[val] || 0xffffff;
-            const mat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.1, roughness: 0.8, transparent: true });
-            
-            let particles =[];
+            const wx = (x - (GRID_SIZE - 1) / 2) * SPACING, wy = (y - (GRID_SIZE - 1) / 2) * SPACING, wz = (z - (GRID_SIZE - 1) / 2) * SPACING;
+            const mat = new THREE.MeshStandardMaterial({ color: COLORS[val] || 0xffffff, metalness: 0.1, roughness: 0.8, transparent: true });
+            let p =[];
             for(let i=0; i<30; i++) {
-                const mesh = new THREE.Mesh(fragGeo, mat);
-                mesh.position.set(wx + (Math.random()-0.5)*0.8, wy + (Math.random()-0.5)*0.8, wz + (Math.random()-0.5)*0.8);
-                explosionGroup.add(mesh);
-                particles.push({
-                    mesh: mesh,
-                    vx: (Math.random() - 0.5) * 0.4,
-                    vy: Math.random() * 0.4 + 0.1,
-                    vz: (Math.random() - 0.5) * 0.4,
-                    rx: (Math.random() - 0.5) * 0.5,
-                    ry: (Math.random() - 0.5) * 0.5,
-                    rz: (Math.random() - 0.5) * 0.5,
-                    life: 1.0
-                });
+                const mesh = new THREE.Mesh(fragGeo, mat); mesh.position.set(wx + (Math.random()-0.5)*0.8, wy + (Math.random()-0.5)*0.8, wz + (Math.random()-0.5)*0.8); explosionGroup.add(mesh);
+                p.push({ mesh: mesh, vx: (Math.random() - 0.5) * 0.4, vy: Math.random() * 0.4 + 0.1, vz: (Math.random() - 0.5) * 0.4, rx: (Math.random() - 0.5) * 0.5, ry: (Math.random() - 0.5) * 0.5, rz: (Math.random() - 0.5) * 0.5, life: 1.0 });
             }
-            activeExplosions.push({ particles, mat });
+            activeExplosions.push({ particles: p, mat });
         }
 
         /* --- Time Bomb Mechanic --- */
         function updateBombUI() {
-            const ui = document.getElementById('bomb-ui');
+            const ui = document.getElementById('bomb-ui'), bestUi = document.getElementById('score-box-best');
+            
             if (bombActive) {
-                ui.style.display = 'block';
-                document.getElementById('bomb-timer-val').innerText = bombTimer;
+                if(ui) { ui.style.display = 'block'; document.getElementById('bomb-timer-val').innerText = bombTimer; }
+                if(bestUi && window.innerWidth <= 768) bestUi.style.display = 'none'; // Hide high score on mobile if bomb is active
             } else {
-                ui.style.display = 'none';
+                if(ui) ui.style.display = 'none';
+                if(bestUi) bestUi.style.display = ''; 
             }
+
+            updateButtonStates();
         }
 
         function handleBombCycle() {
-            if (!bombActive) return false;
-            
-            // Prevent decrementing on the exact turn it spawns
-            if (moveCount === bombSpawnMove) return false;
-            
-            let bombFound = false;
-            let bx = -1, by = -1, bz = -1;
-            
-            for (let x = 0; x < GRID_SIZE; x++) {
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    for (let z = 0; z < GRID_SIZE; z++) {
-                        if (grid[x][y][z] && grid[x][y][z].id === bombId) {
-                            bombFound = true;
-                            bx = x; by = y; bz = z;
-                        }
-                    }
-                }
-            }
-
-            if (!bombFound) {
-                bombActive = false;
-                bombId = null;
-                showToast("Bomb Defused!", "✅");
-                updateBombUI();
-                return false;
-            }
-
-            bombTimer--;
-            updateBombUI();
-
+            if (!bombActive || moveCount === bombSpawnMove) return false;
+            let bf = false, bx = -1, by = -1, bz = -1;
+            for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) if (grid[x][y][z] && grid[x][y][z].id === bombId) { bf = true; bx = x; by = y; bz = z; }
+            if (!bf) { bombActive = false; bombId = null; showToast("Bomb Defused!", "✅"); updateBombUI(); return false; }
+            bombTimer--; updateBombUI();
             if (bombTimer <= 0) {
-                let toDestroy = [];
-                const dirs = [[0,0,0], [1,0,0],[-1,0,0], [0,1,0], [0,-1,0],[0,0,1], [0,0,-1]];
-                
-                for(let d of dirs) {
-                    let nx = bx + d[0], ny = by + d[1], nz = bz + d[2];
-                    if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE && nz>=0 && nz<GRID_SIZE) {
-                        if(grid[nx][ny][nz]) {
-                            toDestroy.push({x: nx, y: ny, z: nz, val: grid[nx][ny][nz].value});
-                        }
-                    }
-                }
-
-                toDestroy.forEach(target => {
-                    createExplosion(target.x, target.y, target.z, target.val);
-                    grid[target.x][target.y][target.z] = null;
-                });
-                
-                playExplosionSound();
-                showToast("Bomb Exploded!", "💥", true);
-                
-                bombActive = false;
-                bombId = null;
-                updateBombUI();
-
-                applyGravity();
-                return true; // True means it exploded
+                let toD =[]; const dirs = [[0,0,0],[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+                for(let d of dirs) { let nx = bx + d[0], ny = by + d[1], nz = bz + d[2]; if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE && nz>=0 && nz<GRID_SIZE && grid[nx][ny][nz]) toD.push({x: nx, y: ny, z: nz, val: grid[nx][ny][nz].value}); }
+                toD.forEach(t => { createExplosion(t.x, t.y, t.z, t.val); grid[t.x][t.y][t.z] = null; });
+                playExplosionSound(); showToast("Bomb Exploded!", "💥", true); bombActive = false; bombId = null; updateBombUI(); applyGravity(); return true; 
             }
             return false;
+        }
+
+        /* --- Confetti & Milestone Animations --- */
+        function fireConfetti() {
+            const cols =['#ff3b30', '#3498db', '#f39c12', '#2ecc71', '#9b59b6', '#f1c40f', '#22d3ee', '#fbbf24'];
+            for(let i=0; i<60; i++) {
+                let c = document.createElement('div'); c.className = 'confetti-piece'; c.style.left = (Math.random() * 100) + 'vw'; c.style.backgroundColor = cols[Math.floor(Math.random() * cols.length)];
+                c.style.width = (Math.random() * 8 + 6) + 'px'; c.style.height = (Math.random() * 12 + 8) + 'px'; c.style.animationDuration = (Math.random() * 2 + 2) + 's'; c.style.animationDelay = (Math.random() * 0.2) + 's'; c.style.setProperty('--sway', (Math.random() * 200 - 100) + 'px');
+                document.body.appendChild(c); setTimeout(() => c.remove(), 4500);
+            }
+        }
+        function showMilestone(val) {
+            playMilestoneSound(); fireConfetti(); const b = document.getElementById('milestone-banner'); document.getElementById('milestone-val').innerText = val; b.classList.add('show');
+            if(milestoneTimeout) clearTimeout(milestoneTimeout); milestoneTimeout = setTimeout(() => b.classList.remove('show'), 3000);
+        }
+        function showInfoBanner() {
+            const b = document.getElementById('info-banner'); b.classList.add('show'); playTone(150, 'sawtooth', 0.4, 0.2); setTimeout(() => playTone(120, 'sawtooth', 0.6, 0.2), 400);
+            if(warningTimeout256) clearTimeout(warningTimeout256); warningTimeout256 = setTimeout(() => b.classList.remove('show'), 2000);
         }
 
         /* --- Level & Objectives Logic --- */
         function getTileRequirements(level) {
-            if (level === 1) return[{ val: 128, count: 1 }];
-            if (level === 2) return[{ val: 256, count: 1 }];
-            if (level === 3) return[{ val: 256, count: 2 }];
-            if (level === 4) return[{ val: 512, count: 1 }];
-            if (level === 5) return[{ val: 512, count: 2 }];
-            if (level === 6) return[{ val: 1024, count: 1 }];
-            if (level === 7) return[{ val: 1024, count: 2 }];
-            
-            let reqs =[{ val: 2048, count: 1 }];
-            if (level === 8) return reqs;
-
-            const secondaryVals =[128, 256, 512, 1024, 2048, 4096, 8192];
-            let offset = level - 9; 
-            let valIndex = Math.floor(offset / 3) % secondaryVals.length;
-            let countSequence = (offset % 3) + 1; 
-
-            let secVal = secondaryVals[valIndex];
-            let secCount = countSequence;
-
-            if (secVal === 2048) {
-                reqs[0].count += secCount; 
-            } else {
-                reqs.push({ val: secVal, count: secCount });
-            }
-            
-            if (level >= 30) {
-                let tertVal = secondaryVals[(valIndex + 2) % secondaryVals.length];
-                let tertCount = (offset % 2) + 1;
-                let existing = reqs.find(r => r.val === tertVal);
-                if (existing) existing.count += tertCount;
-                else reqs.push({ val: tertVal, count: tertCount });
-            }
-
+            if (level === 1) return[{ val: 128, count: 1 }]; if (level === 2) return[{ val: 256, count: 1 }]; if (level === 3) return[{ val: 256, count: 2 }]; if (level === 4) return[{ val: 512, count: 1 }]; if (level === 5) return[{ val: 512, count: 2 }]; if (level === 6) return[{ val: 1024, count: 1 }]; if (level === 7) return[{ val: 1024, count: 2 }];
+            let reqs =[{ val: 2048, count: 1 }]; if (level === 8) return reqs;
+            const sVals =[128, 256, 512, 1024, 2048, 4096, 8192]; let o = level - 9, vI = Math.floor(o / 3) % sVals.length, cS = (o % 3) + 1, sV = sVals[vI];
+            if (sV === 2048) reqs[0].count += cS; else reqs.push({ val: sV, count: cS });
+            if (level >= 30) { let tV = sVals[(vI + 2) % sVals.length], tC = (o % 2) + 1, ex = reqs.find(r => r.val === tV); if (ex) ex.count += tC; else reqs.push({ val: tV, count: tC }); }
             return reqs.sort((a, b) => b.val - a.val);
         }
 
         function generateObjectives(level) {
-            let tilesReq = getTileRequirements(level);
-            
-            let tiles = tilesReq.map(t => ({
-                val: t.val,
-                target: t.count,
-                current: 0,
-                unlocked: false,
-                desc: `Have ${t.count}x[${t.val}] tile${t.count > 1 ? 's' : ''} on board`,
-                icon: "👑"
-            }));
-
-            const tScore = Math.floor(250 * Math.pow(1.12, level - 1));
-            const tGrav = Math.floor((level - 1) / 4) + 1;
-
-            let powerObj = null;
+            let pObj = null;
             if (currentMode !== 'hard') {
-                if (level % 2 === 0) {
-                    let tTarget = Math.floor(level / 8) + 1;
-                    powerObj = { id: 'destroyer', target: tTarget, unlocked: false, desc: `Use Block Destroyer ${tTarget} time${tTarget > 1 ? 's' : ''}`, icon: "💥" };
-                } else {
-                    let uTarget = Math.floor(level / 5) + 1;
-                    powerObj = { id: 'undo', target: uTarget, unlocked: false, desc: `Use Undo ${uTarget} time${uTarget > 1 ? 's' : ''}`, icon: "↩️" };
-                }
+                if (level % 2 === 0) pObj = { id: 'destroyer', target: Math.floor(level / 8) + 1, unlocked: false, desc: `Use Block Destroyer ${Math.floor(level / 8) + 1} time${Math.floor(level / 8) + 1 > 1 ? 's' : ''}`, icon: "💥" };
+                else pObj = { id: 'undo', target: Math.floor(level / 5) + 1, unlocked: false, desc: `Use Undo ${Math.floor(level / 5) + 1} time${Math.floor(level / 5) + 1 > 1 ? 's' : ''}`, icon: "↩️" };
             }
-
-            const finalObj = {
-                tiles: tiles,
-                score: { target: tScore, unlocked: false, desc: `Earn ${tScore} score this level`, icon: "🏅" },
-                gravity: { target: tGrav, unlocked: false, desc: `Use invert gravity ${tGrav} time${tGrav > 1 ? 's' : ''}`, icon: "🌀" }
-            };
-            if(powerObj) finalObj.power = powerObj;
-
-            return finalObj;
+            const fObj = { tiles: getTileRequirements(level).map(t => ({ val: t.val, target: t.count, current: 0, unlocked: false, desc: `Have ${t.count}x[${t.val}] tile${t.count > 1 ? 's' : ''} on board`, icon: "👑" })), score: { target: Math.floor(250 * Math.pow(1.12, level - 1)), unlocked: false, desc: `Earn ${Math.floor(250 * Math.pow(1.12, level - 1))} score this level`, icon: "🏅" }, gravity: { target: Math.floor((level - 1) / 4) + 1, unlocked: false, desc: `Use invert gravity ${Math.floor((level - 1) / 4) + 1} time${Math.floor((level - 1) / 4) + 1 > 1 ? 's' : ''}`, icon: "🌀" } };
+            if(pObj) fObj.power = pObj; return fObj;
         }
 
         function showToast(desc, icon, isError = false) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${isError ? 'error' : ''}`;
-            toast.innerHTML = `<span class="toast-icon">${icon}</span> ${desc}`;
-            container.appendChild(toast);
-            
-            if (!isError) {
-                document.getElementById('obj-notif').style.display = 'block';
-            }
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-20px) scale(0.9)';
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+            const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${isError ? 'error' : ''}`; t.innerHTML = `<span class="toast-icon">${icon}</span> ${desc}`; c.appendChild(t);
+            if (!isError) document.getElementById('obj-notif').style.display = 'block';
+            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(-20px) scale(0.9)'; setTimeout(() => t.remove(), 400); }, 3000);
         }
 
         function checkLevelClear() {
-            let allTilesCleared = objectives.tiles.every(t => t.unlocked);
-            let powerCleared = objectives.power ? objectives.power.unlocked : true;
-            
-            if (allTilesCleared && objectives.score.unlocked && 
-                objectives.gravity.unlocked && powerCleared) {
-                
-                document.getElementById('obj-btn').classList.remove('alert');
-                document.getElementById('obj-notif').style.display = 'none';
-
-                if (!window.isLevelingUp) {
-                    window.isLevelingUp = true;
-                    setTimeout(() => {
-                        levelUp();
-                        window.isLevelingUp = false;
-                    }, 1000); 
-                }
+            if (objectives.tiles.every(t => t.unlocked) && objectives.score.unlocked && objectives.gravity.unlocked && (objectives.power ? objectives.power.unlocked : true)) {
+                document.getElementById('obj-btn').classList.remove('alert'); document.getElementById('obj-notif').style.display = 'none';
+                if (!isLevelingUp) { isLevelingUp = true; setTimeout(() => { currentLevel++; levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 }; objectives = generateObjectives(currentLevel); updateLevelUI(); showBanner('levelup'); saveGameState(); setTimeout(openObjectives, 1500); isLevelingUp = false; }, 1000); }
             }
         }
 
         function skipObjective(key, tileIndex = null) {
-            if (totalCoins < 10) {
-                showToast("Not enough coins to skip!", "⚠️", true);
-                return;
-            }
-            
-            totalCoins -= 10;
-            localStorage.setItem('cube2048_coins', totalCoins);
-            updateCoinUI();
-
-            if (key === 'tile' && tileIndex !== null) {
-                objectives.tiles[tileIndex].unlocked = true;
-                objectives.tiles[tileIndex].current = objectives.tiles[tileIndex].target;
-            } else {
-                objectives[key].unlocked = true;
-                if (key === 'score') levelStats.scoreEarned = objectives[key].target;
-                if (key === 'gravity') levelStats.gravityUses = objectives[key].target;
-                if (key === 'power') {
-                    if (objectives.power.id === 'undo') levelStats.undoUses = objectives.power.target;
-                    if (objectives.power.id === 'destroyer') levelStats.destroyerUses = objectives.power.target;
-                }
-            }
-
-            showToast("Objective Skipped!", "⏭️");
-            renderObjectivesList();
-            saveGameState();
-            checkLevelClear();
+            if (totalCoins < 10) { showToast("Not enough coins to skip!", "⚠️", true); return; }
+            totalCoins -= 10; localStorage.setItem('cube2048_coins', totalCoins); updateCoinUI();
+            if (key === 'tile' && tileIndex !== null) { objectives.tiles[tileIndex].unlocked = true; objectives.tiles[tileIndex].current = objectives.tiles[tileIndex].target; } 
+            else { objectives[key].unlocked = true; if (key === 'score') levelStats.scoreEarned = objectives[key].target; if (key === 'gravity') levelStats.gravityUses = objectives[key].target; if (key === 'power') { if (objectives.power.id === 'undo') levelStats.undoUses = objectives.power.target; if (objectives.power.id === 'destroyer') levelStats.destroyerUses = objectives.power.target; } }
+            showToast("Objective Skipped!", "⏭️"); renderObjectivesList(); saveGameState(); checkLevelClear();
         }
 
         function checkObjectives() {
-            let newlyUnlocked = false;
-            let progressChanged = false;
-            
+            let nU = false, pC = false;
             for (let t of objectives.tiles) {
                 if (!t.unlocked) {
-                    let currentCountOnBoard = 0;
-                    for (let x = 0; x < GRID_SIZE; x++) {
-                        for (let y = 0; y < GRID_SIZE; y++) {
-                            for (let z = 0; z < GRID_SIZE; z++) {
-                                if (grid[x][y][z] && Number(grid[x][y][z].value) === Number(t.val)) {
-                                    currentCountOnBoard++;
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (currentCountOnBoard >= t.target) {
-                        t.current = t.target; 
-                        t.unlocked = true;
-                        showToast(t.desc + ' Completed!', t.icon);
-                        newlyUnlocked = true;
-                    } else if (t.current !== currentCountOnBoard) {
-                        t.current = currentCountOnBoard;
-                        progressChanged = true;
-                    }
+                    let c = 0; for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) if (grid[x][y][z] && grid[x][y][z].value === t.val) c++;
+                    if (c >= t.target) { t.current = t.target; t.unlocked = true; showToast(t.desc + ' Completed!', t.icon); nU = true; } else if (t.current !== c) { t.current = c; pC = true; }
                 }
             }
-            
-            if (!objectives.score.unlocked) {
-                if (levelStats.scoreEarned >= objectives.score.target) {
-                    objectives.score.unlocked = true;
-                    showToast(objectives.score.desc + ' Completed!', objectives.score.icon);
-                    newlyUnlocked = true;
-                } else {
-                    progressChanged = true;
-                }
-            }
-            
-            if (!objectives.gravity.unlocked && levelStats.gravityUses >= objectives.gravity.target) {
-                objectives.gravity.unlocked = true;
-                showToast(objectives.gravity.desc + ' Completed!', objectives.gravity.icon);
-                newlyUnlocked = true;
-            }
-
-            if (objectives.power && !objectives.power.unlocked) {
-                let pId = objectives.power.id;
-                let uses = 0;
-                if (pId === 'undo') uses = levelStats.undoUses;
-                else if (pId === 'destroyer') uses = levelStats.destroyerUses;
-
-                if (uses >= objectives.power.target) {
-                    objectives.power.unlocked = true;
-                    showToast(objectives.power.desc + ' Completed!', objectives.power.icon);
-                    newlyUnlocked = true;
-                } else {
-                    progressChanged = true;
-                }
-            }
-
-            if ((newlyUnlocked || progressChanged) && isModalOpen) {
-                renderObjectivesList();
-            }
-
-            let allTilesCleared = objectives.tiles.every(t => t.unlocked);
-            let powerCleared = objectives.power ? objectives.power.unlocked : true;
-            let fullyCleared = (allTilesCleared && objectives.score.unlocked && objectives.gravity.unlocked && powerCleared);
-
-            if (newlyUnlocked && !isModalOpen && !fullyCleared) {
-                document.getElementById('obj-btn').classList.add('alert');
-                document.getElementById('obj-notif').style.display = 'block';
-            }
-
+            if (!objectives.score.unlocked) { if (levelStats.scoreEarned >= objectives.score.target) { objectives.score.unlocked = true; showToast(objectives.score.desc + ' Completed!', objectives.score.icon); nU = true; } else pC = true; }
+            if (!objectives.gravity.unlocked && levelStats.gravityUses >= objectives.gravity.target) { objectives.gravity.unlocked = true; showToast(objectives.gravity.desc + ' Completed!', objectives.gravity.icon); nU = true; }
+            if (objectives.power && !objectives.power.unlocked) { let u = objectives.power.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses; if (u >= objectives.power.target) { objectives.power.unlocked = true; showToast(objectives.power.desc + ' Completed!', objectives.power.icon); nU = true; } else pC = true; }
+            if ((nU || pC) && isModalOpen) renderObjectivesList();
+            if (nU && !isModalOpen && !(objectives.tiles.every(t => t.unlocked) && objectives.score.unlocked && objectives.gravity.unlocked && (objectives.power ? objectives.power.unlocked : true))) { document.getElementById('obj-btn').classList.add('alert'); document.getElementById('obj-notif').style.display = 'block'; }
             checkLevelClear();
         }
 
-        function levelUp() {
-            currentLevel++;
-            levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
-            objectives = generateObjectives(currentLevel);
-            
-            updateLevelUI();
-            showBanner('levelup');
-            saveGameState();
-            
-            setTimeout(openObjectives, 1500); 
-        }
-
-        function updateLevelUI() {
-            document.getElementById('level-display').innerText = `LVL ${currentLevel}`;
-            document.getElementById('modal-level-title').innerText = `OBJECTIVES - LEVEL ${currentLevel}`;
-        }
+        function updateLevelUI() { document.getElementById('level-display').innerText = `LVL ${currentLevel}`; document.getElementById('modal-level-title').innerText = `OBJECTIVES - LEVEL ${currentLevel}`; }
 
         function renderObjectivesList() {
-            const list = document.getElementById('objectives-list');
-            list.innerHTML = '';
-            
-            const createObjHTML = (obj, key, title, progressText, tileIndex = null) => {
-                const skipStr = !obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tileIndex})">Skip 10 🪙</button>` : `<div class="done-mark">✔️</div>`;
-                return `
-                    <div class="obj-item ${obj.unlocked ? 'unlocked' : ''}">
-                        <div class="obj-icon">${obj.icon}</div>
-                        <div class="obj-text">
-                            <div class="obj-title">
-                                <span>${title}</span>
-                                ${progressText ? `<span class="obj-progress">${progressText}</span>` : ''}
-                            </div>
-                            <div class="obj-desc">${obj.desc}</div>
-                        </div>
-                        ${skipStr}
-                    </div>
-                `;
-            };
-
-            objectives.tiles.forEach((t, idx) => {
-                let pText = t.unlocked ? '' : `(${t.current} / ${t.target})`;
-                list.innerHTML += createObjHTML(t, 'tile', 'TILE SYNTHESIS', pText, idx);
-            });
-            
-            let sObj = objectives.score;
-            let sProg = sObj.unlocked ? '' : `(${levelStats.scoreEarned} / ${sObj.target})`;
-            list.innerHTML += createObjHTML(sObj, 'score', 'TOTAL SCORE', sProg);
-
-            let gObj = objectives.gravity;
-            let gProg = gObj.unlocked ? '' : `(${levelStats.gravityUses} / ${gObj.target})`;
-            list.innerHTML += createObjHTML(gObj, 'gravity', 'GRAVITY SHIFT', gProg);
-
-            if (objectives.power) {
-                let pObj = objectives.power;
-                let pProg = '';
-                if (!pObj.unlocked) {
-                    let currentUses = 0;
-                    if (pObj.id === 'undo') currentUses = levelStats.undoUses;
-                    else if (pObj.id === 'destroyer') currentUses = levelStats.destroyerUses;
-                    pProg = `(${currentUses} / ${pObj.target})`;
-                }
-                let pTitle = 'POWER USAGE';
-                if (pObj.id === 'undo') pTitle = 'TIME TRAVEL';
-                if (pObj.id === 'destroyer') pTitle = 'DEMOLITION';
-                list.innerHTML += createObjHTML(pObj, 'power', pTitle, pProg);
-            }
+            const list = document.getElementById('objectives-list'); list.innerHTML = '';
+            const cHTML = (obj, key, title, pT, tI = null) => `<div class="obj-item ${obj.unlocked ? 'unlocked' : ''}"><div class="obj-icon">${obj.icon}</div><div class="obj-text"><div class="obj-title"><span>${title}</span>${pT ? `<span class="obj-progress">${pT}</span>` : ''}</div><div class="obj-desc">${obj.desc}</div></div>${!obj.unlocked ? `<button class="skip-btn" onclick="skipObjective('${key}', ${tI})">Skip 10 🪙</button>` : `<div class="done-mark">✔️</div>`}</div>`;
+            objectives.tiles.forEach((t, idx) => list.innerHTML += cHTML(t, 'tile', 'TILE SYNTHESIS', t.unlocked ? '' : `(${t.current} / ${t.target})`, idx));
+            list.innerHTML += cHTML(objectives.score, 'score', 'TOTAL SCORE', objectives.score.unlocked ? '' : `(${levelStats.scoreEarned} / ${objectives.score.target})`);
+            list.innerHTML += cHTML(objectives.gravity, 'gravity', 'GRAVITY SHIFT', objectives.gravity.unlocked ? '' : `(${levelStats.gravityUses} / ${objectives.gravity.target})`);
+            if (objectives.power) list.innerHTML += cHTML(objectives.power, 'power', objectives.power.id === 'undo' ? 'TIME TRAVEL' : 'DEMOLITION', objectives.power.unlocked ? '' : `(${objectives.power.id === 'undo' ? levelStats.undoUses : levelStats.destroyerUses} / ${objectives.power.target})`);
         }
 
-        function openObjectives() {
-            if (isFlipping) return;
-            isModalOpen = true;
-            
-            document.getElementById('obj-notif').style.display = 'none';
-            document.getElementById('obj-btn').classList.remove('alert');
-            
-            renderObjectivesList();
-            document.getElementById('objectives-modal').classList.add('show');
-            updateButtonStates();
-        }
-
-        function closeObjectives() {
-            isModalOpen = false;
-            document.getElementById('objectives-modal').classList.remove('show');
-            updateButtonStates();
-        }
+        function openObjectives() { if (isFlipping) return; isModalOpen = true; document.getElementById('obj-notif').style.display = 'none'; document.getElementById('obj-btn').classList.remove('alert'); renderObjectivesList(); document.getElementById('objectives-modal').classList.add('show'); updateButtonStates(); }
+        function closeObjectives() { isModalOpen = false; document.getElementById('objectives-modal').classList.remove('show'); updateButtonStates(); }
 
         /* --- UI / Reset Modal Functions --- */
-        function promptReset() {
-            if (isFlipping) return;
-            isModalOpen = true;
-            document.getElementById('reset-modal').classList.add('show');
-            updateButtonStates();
-        }
-
-        function hideResetModal() {
-            isModalOpen = false;
-            document.getElementById('reset-modal').classList.remove('show');
-            updateButtonStates();
-        }
-
-        function executeReset() {
-            hideResetModal();
-            resetGame();
-        }
+        function promptReset() { if (isFlipping) return; isModalOpen = true; document.getElementById('reset-modal').classList.add('show'); updateButtonStates(); }
+        function hideResetModal() { isModalOpen = false; document.getElementById('reset-modal').classList.remove('show'); updateButtonStates(); }
+        function executeReset() { hideResetModal(); resetGame(); }
 
         /* --- Storage & Persistence Functions --- */
-        function saveGameState() {
-            const state = {
-                grid: grid,
-                score: score,
-                moveCount: moveCount,
-                gravityInverted: gravityInverted,
-                hasWon: hasWon,
-                history: history,
-                currentLevel: currentLevel,
-                levelStats: levelStats,
-                objectives: objectives,
-                highestScoreThisGame: highestScoreThisGame,
-                highestTileAchieved: highestTileAchieved,
-                bombActive: bombActive,
-                bombTimer: bombTimer,
-                bombId: bombId,
-                bombSpawnMove: bombSpawnMove
-            };
-            localStorage.setItem('cube2048_3x3_state_' + currentMode, JSON.stringify(state));
-        }
-
+        function saveGameState() { localStorage.setItem('cube2048_3x3_state_' + currentMode, JSON.stringify({ grid, score, moveCount, gravityInverted, hasWon, history, currentLevel, levelStats, objectives, highestScoreThisGame, highestTileAchieved, bombActive, bombTimer, bombId, bombSpawnMove })); }
         function loadGameState() {
             const saved = localStorage.getItem('cube2048_3x3_state_' + currentMode);
             if (saved) {
                 try {
-                    const state = JSON.parse(saved);
-                    grid = state.grid;
-                    score = state.score;
-                    moveCount = state.moveCount;
-                    gravityInverted = state.gravityInverted || false;
-                    hasWon = state.hasWon || false;
-                    history = state.history ||[];
-                    
-                    currentLevel = state.currentLevel || 1;
-                    levelStats = state.levelStats || { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
-                    highestScoreThisGame = state.highestScoreThisGame || 0;
-                    highestTileAchieved = state.highestTileAchieved || 8;
-                    
-                    bombActive = state.bombActive || false;
-                    bombTimer = state.bombTimer || 0;
-                    bombId = state.bombId || null;
-                    bombSpawnMove = state.bombSpawnMove || -1;
-                    
-                    if (state.objectives) {
-                        objectives = state.objectives;
-                        if (objectives.moveScore) delete objectives.moveScore;
-                        if (objectives.power && objectives.power.id === 'score_hard') delete objectives.power;
-                    } else {
-                        objectives = generateObjectives(currentLevel);
-                    }
-                    
+                    const st = JSON.parse(saved); grid = st.grid; score = st.score; moveCount = st.moveCount; gravityInverted = st.gravityInverted || false; hasWon = st.hasWon || false; history = st.history ||[]; currentLevel = st.currentLevel || 1; levelStats = st.levelStats || { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 }; highestScoreThisGame = st.highestScoreThisGame || 0; highestTileAchieved = st.highestTileAchieved || 8; bombActive = st.bombActive || false; bombTimer = st.bombTimer || 0; bombId = st.bombId || null; bombSpawnMove = st.bombSpawnMove || -1;
+                    objectives = (st.objectives && !st.objectives.moveScore) ? st.objectives : generateObjectives(currentLevel);
                     document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-                    
-                    updateLevelUI();
-                    updateBombUI();
-                    sync();
-                    checkGameState();
-                    
-                    checkObjectives();
-                    return true;
-                } catch (e) {
-                    console.error("Failed to load state", e);
-                    return false;
-                }
-            }
-            return false;
+                    updateLevelUI(); updateBombUI(); sync(); checkGameState(); checkObjectives(); return true;
+                } catch (e) { return false; }
+            } return false;
         }
 
         /* --- Banner Management Functions --- */
         function showBanner(type) {
-            currentBannerType = type;
-            const banner = document.getElementById('banner');
-            const title = document.getElementById('banner-title');
-            const desc = document.getElementById('banner-desc');
-            const btn = document.getElementById('banner-btn');
-            
-            if(type === 'zenith') {
-                title.innerText = 'ZENITH';
-                desc.innerText = 'Ultimate cube synthesized.';
-                btn.innerText = 'CONTINUE';
-            } else if (type === 'levelup') {
-                title.innerText = 'LEVEL CLEARED!';
-                desc.innerText = `Welcome to Level ${currentLevel}. New objectives added.`;
-                btn.innerText = 'CONTINUE';
-            } else {
-                title.innerText = 'STALEMATE';
-                desc.innerText = 'No further moves possible.';
-                btn.innerText = 'RESTART';
-            }
-
-            banner.className = 'banner show ' + type;
-            
-            if(bannerTimeout) clearTimeout(bannerTimeout);
-            bannerTimeout = setTimeout(() => {
-                if (currentBannerType === type) {
-                    banner.classList.add('interactive');
-                }
-            }, 1000); 
+            currentBannerType = type; const b = document.getElementById('banner'), t = document.getElementById('banner-title'), d = document.getElementById('banner-desc'), btn = document.getElementById('banner-btn');
+            if(type === 'zenith') { t.innerText = 'ZENITH'; d.innerText = 'Ultimate cube synthesized.'; btn.innerText = 'CONTINUE'; }
+            else if (type === 'levelup') { t.innerText = 'LEVEL CLEARED!'; d.innerText = `Welcome to Level ${currentLevel}. New objectives added.`; btn.innerText = 'CONTINUE'; }
+            else { t.innerText = 'STALEMATE'; d.innerText = 'No further moves possible.'; btn.innerText = 'RESTART'; }
+            b.className = 'banner show ' + type; if(bannerTimeout) clearTimeout(bannerTimeout); bannerTimeout = setTimeout(() => { if (currentBannerType === type) b.classList.add('interactive'); }, 1000); 
         }
-
-        function hideBanner() {
-            const banner = document.getElementById('banner');
-            banner.className = 'banner';
-            currentBannerType = '';
-            if(bannerTimeout) clearTimeout(bannerTimeout);
-        }
-
-        function bannerAction() {
-            if (currentBannerType === 'stalemate') resetGame(); 
-            else if (currentBannerType === 'zenith' || currentBannerType === 'levelup') {
-                hideBanner();
-                checkGameState();
-            }
-        }
+        function hideBanner() { document.getElementById('banner').className = 'banner'; currentBannerType = ''; if(bannerTimeout) clearTimeout(bannerTimeout); }
+        function bannerAction() { if (currentBannerType === 'stalemate') resetGame(); else if (currentBannerType === 'zenith' || currentBannerType === 'levelup') { hideBanner(); checkGameState(); } }
 
         function checkGameState() {
-            let canMove = false;
-            for (let x = 0; x < GRID_SIZE; x++) {
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    for (let z = 0; z < GRID_SIZE; z++) {
-                        if (!grid[x][y][z]) {
-                            canMove = true;
-                            break;
-                        }
-                        const c = grid[x][y][z];
-                        const ns = [[x+1,y,z],[x,y+1,z],[x,y,z+1]];
-                        for (const[nx,ny,nz] of ns) {
-                            if (nx < GRID_SIZE && ny < GRID_SIZE && nz < GRID_SIZE && grid[nx][ny][nz] && grid[nx][ny][nz].value === c.value) {
-                                canMove = true;
-                                break;
-                            }
-                        }
-                        if (canMove) break;
-                    }
-                    if (canMove) break;
-                }
-                if (canMove) break;
+            let cM = false;
+            for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
+                if (!grid[x][y][z]) { cM = true; break; }
+                const c = grid[x][y][z]; [[x+1,y,z],[x,y+1,z],[x,y,z+1]].forEach(ns => { if (ns[0] < GRID_SIZE && ns[1] < GRID_SIZE && ns[2] < GRID_SIZE && grid[ns[0]][ns[1]][ns[2]] && grid[ns[0]][ns[1]][ns[2]].value === c.value) cM = true; }); if (cM) break;
             }
-            
-            if (!canMove && currentBannerType !== 'zenith' && currentBannerType !== 'levelup') {
-                showBanner('stalemate');
-            } else if (canMove && currentBannerType === 'stalemate') {
-                hideBanner();
-            }
+            if (!cM && currentBannerType !== 'zenith' && currentBannerType !== 'levelup') showBanner('stalemate'); else if (cM && currentBannerType === 'stalemate') hideBanner();
         }
 
         /* --- Procedural Textures Generation --- */
         function createTex(val) {
             if (textureCache.has(val)) return textureCache.get(val);
-            const canvas = document.createElement('canvas'); 
-            canvas.width = 512; canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            const color = '#' + (COLORS[val] || 0xedc22e).toString(16).padStart(6, '0');
-            
-            ctx.fillStyle = color;
-            ctx.fillRect(0, 0, 512, 512);
-            
-            const m = 30, r = 100;
-            ctx.beginPath();
-            ctx.moveTo(m + r, m);
-            ctx.lineTo(512 - m - r, m);
-            ctx.quadraticCurveTo(512 - m, m, 512 - m, m + r);
-            ctx.lineTo(512 - m, 512 - m - r);
-            ctx.quadraticCurveTo(512 - m, 512 - m, 512 - m - r, 512 - m);
-            ctx.lineTo(m + r, 512 - m);
-            ctx.quadraticCurveTo(m, 512 - m, m, 512 - m - r);
-            ctx.lineTo(m, m + r);
-            ctx.quadraticCurveTo(m, m, m + r, m);
-            ctx.closePath();
-            
-            const grad = ctx.createLinearGradient(0, m, 0, 512 - m);
-            grad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-            grad.addColorStop(1, 'rgba(0, 0, 0, 0.05)');
-            
-            ctx.fillStyle = color; ctx.fill();
-            ctx.fillStyle = grad; ctx.fill();
-            
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 12; ctx.stroke();
-
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            ctx.shadowBlur = 20; ctx.shadowOffsetY = 12;
-            
-            ctx.fillStyle = val === 2 ? '#333333' : '#ffffff';
-            let fontSize = val >= 1000 ? 140 : val >= 100 ? 180 : 220;
-            ctx.font = `bold ${fontSize}px sans-serif`; 
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(val, 256, 256);
-            
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.anisotropy = 16;
-            tex.colorSpace = THREE.SRGBColorSpace;
-            textureCache.set(val, tex);
-            return tex;
+            const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const ctx = cv.getContext('2d'), c = '#' + (COLORS[val] || 0xedc22e).toString(16).padStart(6, '0');
+            ctx.fillStyle = c; ctx.fillRect(0, 0, 512, 512); const m = 30, r = 100; ctx.beginPath(); ctx.moveTo(m + r, m); ctx.lineTo(512 - m - r, m); ctx.quadraticCurveTo(512 - m, m, 512 - m, m + r); ctx.lineTo(512 - m, 512 - m - r); ctx.quadraticCurveTo(512 - m, 512 - m, 512 - m - r, 512 - m); ctx.lineTo(m + r, 512 - m); ctx.quadraticCurveTo(m, 512 - m, m, 512 - m - r); ctx.lineTo(m, m + r); ctx.quadraticCurveTo(m, m, m + r, m); ctx.closePath();
+            const g = ctx.createLinearGradient(0, m, 0, 512 - m); g.addColorStop(0, 'rgba(255, 255, 255, 0.15)'); g.addColorStop(1, 'rgba(0, 0, 0, 0.05)'); ctx.fillStyle = c; ctx.fill(); ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 12; ctx.stroke(); ctx.shadowColor = 'rgba(0, 0, 0, 0.2)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 12;
+            ctx.fillStyle = val === 2 ? '#333333' : '#ffffff'; ctx.font = `bold ${val >= 1000 ? 140 : val >= 100 ? 180 : 220}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(val, 256, 256);
+            const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 16; tex.colorSpace = THREE.SRGBColorSpace; textureCache.set(val, tex); return tex;
         }
 
         function createNebulaTexture(colorHex) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            const cx = 256, cy = 256, r = 256;
-            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-            
-            const c = new THREE.Color(colorHex);
-            gradient.addColorStop(0, `rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, 0.6)`);
-            gradient.addColorStop(0.4, `rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, 0.2)`);
-            gradient.addColorStop(1, `rgba(0, 0, 0, 0)`);
-            
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 512, 512);
-            
-            return new THREE.CanvasTexture(canvas);
+            const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const ctx = cv.getContext('2d'), c = new THREE.Color(colorHex), g = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+            g.addColorStop(0, `rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, 0.6)`); g.addColorStop(0.4, `rgba(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)}, 0.2)`); g.addColorStop(1, `rgba(0, 0, 0, 0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512); return new THREE.CanvasTexture(cv);
         }
 
         /* --- Initialization --- */
         function init() {
-            const wrapper = document.getElementById('game-wrapper');
-            scene = new THREE.Scene(); 
-            scene.background = null; 
-            
-            camera = new THREE.PerspectiveCamera(35, wrapper.clientWidth / wrapper.clientHeight, 0.1, 2000);
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.0;
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
-            
-            cubeGroup = new THREE.Group();
-            scene.add(cubeGroup);
-            
-            explosionGroup = new THREE.Group();
-            scene.add(explosionGroup);
-
-            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            scene.add(new THREE.HemisphereLight(0x8080ff, 0x202040, 0.8)); 
-            
-            const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-            dir.position.set(5, 15, 8);
-            dir.castShadow = true;
-            dir.shadow.mapSize.width = 2048; dir.shadow.mapSize.height = 2048;
-            dir.shadow.camera.left = -10; dir.shadow.camera.right = 10;
-            dir.shadow.camera.top = 10; dir.shadow.camera.bottom = -10;
-            dir.shadow.radius = 6;
-            scene.add(dir);
-
-            const starGeo = new THREE.BufferGeometry();
-            const starPos =[];
-            const starColors =[];
-            const colorObj = new THREE.Color();
-            
-            for(let i = 0; i < 8000; i++) {
-                const u = Math.random(), v = Math.random();
-                const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
-                const r = 800 * Math.cbrt(Math.random());
-                
-                if (r < 50) continue; 
-                
-                starPos.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
-                
-                const randHue = Math.random();
-                if(randHue > 0.90) colorObj.setHSL(0.6, 0.8, 0.9); 
-                else if(randHue > 0.80) colorObj.setHSL(0.1, 0.8, 0.9); 
-                else colorObj.setHSL(0, 0, 1.0); 
-                
-                starColors.push(colorObj.r, colorObj.g, colorObj.b);
-            }
-            
-            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-            starGeo.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
-            
-            const starMat = new THREE.PointsMaterial({ 
-                size: 1.5, transparent: true, opacity: 1.0, vertexColors: true, sizeAttenuation: true
-            });
-            scene.add(new THREE.Points(starGeo, starMat));
-
-            const nebulaColors =[0x8a2be2, 0x4169e1, 0xff1493, 0x00ced1]; 
-            const nebulaGroup = new THREE.Group();
-            for(let i = 0; i < 20; i++) {
-                const color = nebulaColors[Math.floor(Math.random() * nebulaColors.length)];
-                const mat = new THREE.SpriteMaterial({ 
-                    map: createNebulaTexture(color), blending: THREE.AdditiveBlending, transparent: true, opacity: 0.3 + Math.random() * 0.4
-                });
-                const sprite = new THREE.Sprite(mat);
-                
-                const theta = Math.random() * 2.0 * Math.PI;
-                const phi = Math.acos(2.0 * Math.random() - 1.0);
-                const r = 400 + Math.random() * 300; 
-                sprite.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
-                
-                const scale = 200 + Math.random() * 400;
-                sprite.scale.set(scale, scale, 1);
-                nebulaGroup.add(sprite);
-            }
-            scene.add(nebulaGroup);
-
+            const w = document.getElementById('game-wrapper'); scene = new THREE.Scene(); scene.background = null; camera = new THREE.PerspectiveCamera(35, w.clientWidth / w.clientHeight, 0.1, 2000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setPixelRatio(window.devicePixelRatio); renderer.setSize(w.clientWidth, w.clientHeight); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; document.getElementById('canvas-container').appendChild(renderer.domElement);
+            cubeGroup = new THREE.Group(); scene.add(cubeGroup); explosionGroup = new THREE.Group(); scene.add(explosionGroup);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5)); scene.add(new THREE.HemisphereLight(0x8080ff, 0x202040, 0.8)); 
+            const dir = new THREE.DirectionalLight(0xffffff, 1.0); dir.position.set(5, 15, 8); dir.castShadow = true; dir.shadow.mapSize.width = 2048; dir.shadow.mapSize.height = 2048; dir.shadow.camera.left = -10; dir.shadow.camera.right = 10; dir.shadow.camera.top = 10; dir.shadow.camera.bottom = -10; dir.shadow.radius = 6; scene.add(dir);
+            const sg = new THREE.BufferGeometry(), sp =[], sc =[], co = new THREE.Color();
+            for(let i = 0; i < 8000; i++) { const u = Math.random(), v = Math.random(), t = u * 2.0 * Math.PI, p = Math.acos(2.0 * v - 1.0), r = 800 * Math.cbrt(Math.random()); if (r < 50) continue; sp.push(r * Math.sin(p) * Math.cos(t), r * Math.sin(p) * Math.sin(t), r * Math.cos(p)); const rh = Math.random(); if(rh > 0.90) co.setHSL(0.6, 0.8, 0.9); else if(rh > 0.80) co.setHSL(0.1, 0.8, 0.9); else co.setHSL(0, 0, 1.0); sc.push(co.r, co.g, co.b); }
+            sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3)); scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ size: 1.5, transparent: true, opacity: 1.0, vertexColors: true, sizeAttenuation: true })));
+            const nc =[0x8a2be2, 0x4169e1, 0xff1493, 0x00ced1], ng = new THREE.Group();
+            for(let i = 0; i < 20; i++) { const m = new THREE.SpriteMaterial({ map: createNebulaTexture(nc[Math.floor(Math.random() * nc.length)]), blending: THREE.AdditiveBlending, transparent: true, opacity: 0.3 + Math.random() * 0.4 }), s = new THREE.Sprite(m), t = Math.random() * 2.0 * Math.PI, p = Math.acos(2.0 * Math.random() - 1.0), r = 400 + Math.random() * 300; s.position.set(r * Math.sin(p) * Math.cos(t), r * Math.sin(p) * Math.sin(t), r * Math.cos(p)); const sc = 200 + Math.random() * 400; s.scale.set(sc, sc, 1); ng.add(s); } scene.add(ng);
             raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
 
-            const startDrag = (x, y) => { 
-                if (isFlipping || isModalOpen) return;
-                isDrag = true; px = x; py = y; startX = x; startY = y; 
-            };
-            const moveDrag = (x, y) => { 
-                if (!isDrag) return; 
-                rotY -= (x - px) * 0.005; rotX += (y - py) * 0.005; 
-                rotX = Math.max(-1.4, Math.min(1.4, rotX)); 
-                px = x; py = y; 
-            };
-            const endDrag = (clientX, clientY) => { 
-                if (isDrag) {
-                    if (Math.sqrt(Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2)) <= 10) {
-                        handleAction(clientX, clientY);
-                    }
-                    isDrag = false; 
-                }
-            };
-            
-            const handleAction = (clientX, clientY) => {
-                if (isFlipping || isModalOpen) return;
-                
-                if (currentMode !== 'easy' && !isDestroyMode) return; 
-
-                const rect = renderer.domElement.getBoundingClientRect();
-                mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-                mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-                raycaster.setFromCamera(mouse, camera);
-                const hits = raycaster.intersectObjects(Array.from(blockMeshes.values()));
-                if (hits.length > 0) click(hits[0].object.userData.pos);
-            };
-
-            renderer.domElement.addEventListener('pointerdown', (e) => startDrag(e.clientX, e.clientY));
-            window.addEventListener('pointermove', (e) => moveDrag(e.clientX, e.clientY));
-            window.addEventListener('pointerup', (e) => endDrag(e.clientX, e.clientY));
-            window.addEventListener('pointercancel', () => isDrag = false);
-
-            window.addEventListener('resize', () => {
-                const wrp = document.getElementById('game-wrapper');
-                camera.aspect = wrp.clientWidth / wrp.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(wrp.clientWidth, wrp.clientHeight);
-            });
-            
-            window.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoMove(); }
-                if (e.key === 'r') promptReset();
-            });
+            renderer.domElement.addEventListener('pointerdown', (e) => { if (isFlipping || isModalOpen) return; isDrag = true; px = e.clientX; py = e.clientY; startX = px; startY = py; });
+            window.addEventListener('pointermove', (e) => { if (!isDrag) return; rotY -= (e.clientX - px) * 0.005; rotX += (e.clientY - py) * 0.005; rotX = Math.max(-1.4, Math.min(1.4, rotX)); px = e.clientX; py = e.clientY; });
+            window.addEventListener('pointerup', (e) => { if (isDrag && Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2)) <= 10) { if (isFlipping || isModalOpen || (currentMode !== 'easy' && !isDestroyMode)) return; const r = renderer.domElement.getBoundingClientRect(); mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1; mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1; raycaster.setFromCamera(mouse, camera); const h = raycaster.intersectObjects(Array.from(blockMeshes.values())); if (h.length > 0) click(h[0].object.userData.pos); } isDrag = false; });
+            window.addEventListener('pointercancel', () => isDrag = false); window.addEventListener('resize', () => { camera.aspect = w.clientWidth / w.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(w.clientWidth, w.clientHeight); }); window.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoMove(); } if (e.key === 'r') promptReset(); });
 
             function loop() {
                 requestAnimationFrame(loop);
-                
-                const wrp = document.getElementById('game-wrapper');
-                const aspect = wrp.clientWidth / wrp.clientHeight;
-                const dynamicRadius = Math.max(13, 11 / aspect);
-
-                camera.position.set(
-                    dynamicRadius * Math.sin(rotY) * Math.cos(rotX), 
-                    dynamicRadius * Math.sin(rotX), 
-                    dynamicRadius * Math.cos(rotY) * Math.cos(rotX)
-                );
-                camera.lookAt(0, 0, 0);
-
-                nebulaGroup.rotation.y += 0.0005;
-                nebulaGroup.rotation.z += 0.0002;
-
+                const dR = Math.max(13, 11 / (w.clientWidth / w.clientHeight)); camera.position.set(dR * Math.sin(rotY) * Math.cos(rotX), dR * Math.sin(rotX), dR * Math.cos(rotY) * Math.cos(rotX)); camera.lookAt(0, 0, 0); ng.rotation.y += 0.0005; ng.rotation.z += 0.0002;
                 if (isFlipping) {
-                    flipProgress += 0.035; 
-                    if (flipProgress >= 1) flipProgress = 1;
-                    
-                    const ease = flipProgress < 0.5 ? 4 * flipProgress * flipProgress * flipProgress : 1 - Math.pow(-2 * flipProgress + 2, 3) / 2;
-                    cubeGroup.rotation.z = ease * Math.PI; 
-                    
+                    flipProgress += 0.035; if (flipProgress >= 1) flipProgress = 1; cubeGroup.rotation.z = (flipProgress < 0.5 ? 4 * flipProgress * flipProgress * flipProgress : 1 - Math.pow(-2 * flipProgress + 2, 3) / 2) * Math.PI; 
                     if (flipProgress === 1) {
-                        isFlipping = false;
-                        cubeGroup.rotation.z = 0; 
-                        
-                        const newGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
-                        const off = (GRID_SIZE - 1) / 2;
-                        
-                        for (let x = 0; x < GRID_SIZE; x++) {
-                            for (let y = 0; y < GRID_SIZE; y++) {
-                                for (let z = 0; z < GRID_SIZE; z++) {
-                                    if (grid[x][y][z]) {
-                                        const newX = GRID_SIZE - 1 - x;
-                                        const newY = GRID_SIZE - 1 - y;
-                                        const newZ = z;
-                                        newGrid[newX][newY][newZ] = grid[x][y][z];
-                                        
-                                        const m = blockMeshes.get(grid[x][y][z].id);
-                                        if (m) {
-                                            m.position.set((newX - off) * SPACING, (newY - off) * SPACING, (newZ - off) * SPACING);
-                                            m.userData.target = m.position.clone();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        grid = newGrid;
-                        updateButtonStates();
-                        applyGravity();
-                        sync();
-                        checkGameState();
-                        saveGameState();
+                        isFlipping = false; cubeGroup.rotation.z = 0; const nG = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))), o = (GRID_SIZE - 1) / 2;
+                        for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) if (grid[x][y][z]) { nG[GRID_SIZE - 1 - x][GRID_SIZE - 1 - y][z] = grid[x][y][z]; const m = blockMeshes.get(grid[x][y][z].id); if (m) { m.position.set((GRID_SIZE - 1 - x - o) * SPACING, (GRID_SIZE - 1 - y - o) * SPACING, (z - o) * SPACING); m.userData.target = m.position.clone(); } }
+                        grid = nG; updateButtonStates(); applyGravity(); sync(); checkGameState(); saveGameState();
                     }
                 } else {
-                    const time = Date.now() * 0.005;
+                    const t = Date.now() * 0.005;
                     for (const m of blockMeshes.values()) {
                         if (m.userData.target) m.position.lerp(m.userData.target, 0.15);
-                        
-                        if (m.userData.isBomb) {
-                            const intensity = (Math.sin(time) + 1) / 2; 
-                            m.material.forEach((mat) => {
-                                mat.emissive.setHex(0xff0000);
-                                mat.emissiveIntensity = 0.4 + intensity * 0.6;
-                            });
-                        }
+                        if (m.userData.isBomb) { const i = (Math.sin(t) + 1) / 2; m.material.forEach(mat => { mat.emissive.setHex(0xff0000); mat.emissiveIntensity = 0.4 + i * 0.6; }); }
                     }
                 }
-
-                // Animate Explosions
                 for(let i = activeExplosions.length - 1; i >= 0; i--) {
-                    let exp = activeExplosions[i];
-                    let alive = false;
-                    exp.mat.opacity -= 0.02; 
-                    
-                    for(let j = 0; j < exp.particles.length; j++) {
-                        let p = exp.particles[j];
-                        if(p.life > 0) {
-                            p.life -= 0.02;
-                            p.vy -= 0.015; 
-                            p.mesh.position.x += p.vx;
-                            p.mesh.position.y += p.vy;
-                            p.mesh.position.z += p.vz;
-                            p.mesh.rotation.x += p.rx;
-                            p.mesh.rotation.y += p.ry;
-                            p.mesh.rotation.z += p.rz;
-                            p.mesh.scale.setScalar(Math.max(0.01, p.life));
-                            
-                            if(p.life <= 0) {
-                                explosionGroup.remove(p.mesh);
-                            } else {
-                                alive = true;
-                            }
-                        }
-                    }
-                    
-                    if(!alive) {
-                        exp.mat.dispose();
-                        activeExplosions.splice(i, 1);
-                    }
-                }
-                
-                renderer.render(scene, camera);
-            }
-            loop();
+                    let ex = activeExplosions[i], al = false; ex.mat.opacity -= 0.02; 
+                    for(let j = 0; j < ex.particles.length; j++) {
+                        let p = ex.particles[j]; if(p.life > 0) { p.life -= 0.02; p.vy -= 0.015; p.mesh.position.x += p.vx; p.mesh.position.y += p.vy; p.mesh.position.z += p.vz; p.mesh.rotation.x += p.rx; p.mesh.rotation.y += p.ry; p.mesh.rotation.z += p.rz; p.mesh.scale.setScalar(Math.max(0.01, p.life)); if(p.life <= 0) explosionGroup.remove(p.mesh); else al = true; }
+                    } if(!al) { ex.mat.dispose(); activeExplosions.splice(i, 1); }
+                } renderer.render(scene, camera);
+            } loop();
         }
 
         function getScreenMappedDirection(screenDir) {
-            const axes =[
-                { axis: 'x', dir: 1, vec: new THREE.Vector3(1, 0, 0) },
-                { axis: 'x', dir: -1, vec: new THREE.Vector3(-1, 0, 0) },
-                { axis: 'z', dir: 1, vec: new THREE.Vector3(0, 0, 1) },
-                { axis: 'z', dir: -1, vec: new THREE.Vector3(0, 0, -1) }
-            ];
-
-            let bestMatch = null;
-            let maxScore = -Infinity;
-
-            axes.forEach(a => {
-                const p = a.vec.clone().project(camera);
-                const score = (screenDir === 'right') ? p.x : -p.x;
-                
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestMatch = a;
-                }
-            });
-
-            return bestMatch;
+            const axes =[{ axis: 'x', dir: 1, vec: new THREE.Vector3(1, 0, 0) }, { axis: 'x', dir: -1, vec: new THREE.Vector3(-1, 0, 0) }, { axis: 'z', dir: 1, vec: new THREE.Vector3(0, 0, 1) }, { axis: 'z', dir: -1, vec: new THREE.Vector3(0, 0, -1) }];
+            let bM = null, mS = -Infinity;
+            axes.forEach(a => { const p = a.vec.clone().project(camera), s = (screenDir === 'right') ? p.x : -p.x; if (s > mS) { mS = s; bM = a; } }); return bM;
         }
 
         function slideLine(line) {
-            let newLine =[];
-            let scoreGained = 0;
-            let filtered = line.filter(b => b !== null);
-            let i = 0;
-            while (i < filtered.length) {
-                if (i + 1 < filtered.length && filtered[i].value === filtered[i+1].value) {
-                    let val = filtered[i].value * 2;
-                    scoreGained += filtered[i].value; 
-                    
-                    if (bombActive && (filtered[i].id === bombId || filtered[i+1].id === bombId)) {
-                        bombActive = false;
-                        bombId = null;
-                        showToast("Bomb Defused!", "✅");
-                        updateBombUI();
-                    }
-
-                    newLine.push({ id: filtered[i].id, value: val }); 
-                    i += 2;
-                } else {
-                    newLine.push(filtered[i]);
-                    i++;
-                }
-            }
-            while (newLine.length < GRID_SIZE) newLine.push(null);
-            return { newLine, scoreGained };
-        }
-
-        function handleBombCycle() {
-            if (!bombActive) return false;
-            
-            if (moveCount === bombSpawnMove) return false;
-            
-            let bombFound = false;
-            let bx = -1, by = -1, bz = -1;
-            
-            for (let x = 0; x < GRID_SIZE; x++) {
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    for (let z = 0; z < GRID_SIZE; z++) {
-                        if (grid[x][y][z] && grid[x][y][z].id === bombId) {
-                            bombFound = true;
-                            bx = x; by = y; bz = z;
-                        }
-                    }
-                }
-            }
-
-            if (!bombFound) {
-                bombActive = false;
-                bombId = null;
-                showToast("Bomb Defused!", "✅");
-                updateBombUI();
-                return false;
-            }
-
-            bombTimer--;
-            updateBombUI();
-
-            if (bombTimer <= 0) {
-                let toDestroy = [];
-                const dirs = [[0,0,0], [1,0,0],[-1,0,0], [0,1,0], [0,-1,0],[0,0,1], [0,0,-1]];
-                
-                for(let d of dirs) {
-                    let nx = bx + d[0], ny = by + d[1], nz = bz + d[2];
-                    if(nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE && nz>=0 && nz<GRID_SIZE) {
-                        if(grid[nx][ny][nz]) {
-                            toDestroy.push({x: nx, y: ny, z: nz, val: grid[nx][ny][nz].value});
-                        }
-                    }
-                }
-
-                toDestroy.forEach(target => {
-                    createExplosion(target.x, target.y, target.z, target.val);
-                    grid[target.x][target.y][target.z] = null;
-                });
-                
-                playExplosionSound();
-                showToast("Bomb Exploded!", "💥", true);
-                
-                bombActive = false;
-                bombId = null;
-                updateBombUI();
-
-                applyGravity();
-                return true; 
-            }
-            return false;
-        }
-
-        function updateBombUI() {
-            const ui = document.getElementById('bomb-ui');
-            if (bombActive) {
-                ui.style.display = 'block';
-                document.getElementById('bomb-timer-val').innerText = bombTimer;
-            } else {
-                ui.style.display = 'none';
-            }
+            let nl =[], sg = 0, f = line.filter(b => b !== null), i = 0;
+            while (i < f.length) {
+                if (i + 1 < f.length && f[i].value === f[i+1].value) {
+                    let v = f[i].value * 2; sg += f[i].value; 
+                    if (bombActive && (f[i].id === bombId || f[i+1].id === bombId)) { bombActive = false; bombId = null; showToast("Bomb Defused!", "✅"); updateBombUI(); }
+                    nl.push({ id: f[i].id, value: v }); i += 2;
+                } else { nl.push(f[i]); i++; }
+            } while (nl.length < GRID_SIZE) nl.push(null); return { nl, sg };
         }
 
         function directionalMove(direction) {
             if (isFlipping || isModalOpen) return;
-            
-            if (isDestroyMode) {
-                toggleDestroyMode(false); 
-            }
-
-            saveHistory();
-            
-            let changed = false;
-            let moveScore = 0;
-            
+            if (isDestroyMode) toggleDestroyMode(false); 
+            saveHistory(); let ch = false, ms = 0;
             if (direction === 'down') {
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    for (let z = 0; z < GRID_SIZE; z++) {
-                        let line =[];
-                        for (let y = 0; y < GRID_SIZE; y++) line.push(grid[x][y][z]);
-                        
-                        let res = slideLine(line);
-                        let newLine = res.newLine;
-                        moveScore += res.scoreGained;
-                        
-                        for (let y = 0; y < GRID_SIZE; y++) {
-                            if (grid[x][y][z] !== newLine[y]) changed = true;
-                            grid[x][y][z] = newLine[y];
-                        }
-                        score += res.scoreGained;
-                    }
-                }
-            } else if (direction === 'right' || direction === 'left') {
-                const match = getScreenMappedDirection(direction);
-                
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    if (match.axis === 'x') {
-                        for (let z = 0; z < GRID_SIZE; z++) {
-                            let line =[];
-                            for (let x = 0; x < GRID_SIZE; x++) line.push(grid[x][y][z]);
-                            
-                            if (match.dir === 1) line.reverse(); 
-                            let res = slideLine(line);
-                            let newLine = res.newLine;
-                            if (match.dir === 1) newLine.reverse();
-                            
-                            moveScore += res.scoreGained;
-                            
-                            for (let x = 0; x < GRID_SIZE; x++) {
-                                if (grid[x][y][z] !== newLine[x]) changed = true;
-                                grid[x][y][z] = newLine[x];
-                            }
-                            score += res.scoreGained;
-                        }
-                    } else if (match.axis === 'z') {
-                        for (let x = 0; x < GRID_SIZE; x++) {
-                            let line =[];
-                            for (let z = 0; z < GRID_SIZE; z++) line.push(grid[x][y][z]);
-                            
-                            if (match.dir === 1) line.reverse(); 
-                            let res = slideLine(line);
-                            let newLine = res.newLine;
-                            if (match.dir === 1) newLine.reverse();
-                            
-                            moveScore += res.scoreGained;
-                            
-                            for (let z = 0; z < GRID_SIZE; z++) {
-                                if (grid[x][y][z] !== newLine[z]) changed = true;
-                                grid[x][y][z] = newLine[z];
-                            }
-                            score += res.scoreGained;
-                        }
-                    }
-                }
-            }
-            
-            if (changed) {
-                applyGravity(); 
-                moveCount++;
-                levelStats.scoreEarned += moveScore;
-                
-                handleBombCycle();
-
-                spawnBlock(); 
-                
-                if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best_' + currentMode, best); }
-                if (score > highestScoreThisGame) {
-                    addCoinsFromScore(score - highestScoreThisGame);
-                    highestScoreThisGame = score;
-                }
-
-                sync();
-                checkObjectives();
-                
-                let moveMaxVal = 0;
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    for (let y = 0; y < GRID_SIZE; y++) {
-                        for (let z = 0; z < GRID_SIZE; z++) {
-                            if (grid[x][y][z]) moveMaxVal = Math.max(moveMaxVal, grid[x][y][z].value);
-                        }
-                    }
-                }
-
-                let isMilestone = false;
-                if (moveMaxVal > highestTileAchieved && moveMaxVal >= 16) {
-                    highestTileAchieved = moveMaxVal;
-                    localStorage.setItem('cube2048_highest_tile', highestTileAchieved);
-                    showMilestone(highestTileAchieved);
-                    isMilestone = true;
-                }
-
-                if (!isMilestone && moveScore > 0) {
-                    playMergeSound();
-                }
-                
-                let zenithFound = false;
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    for (let y = 0; y < GRID_SIZE; y++) {
-                        for (let z = 0; z < GRID_SIZE; z++) {
-                            if (grid[x][y][z] && grid[x][y][z].value === 2048) zenithFound = true;
-                        }
-                    }
-                }
-                
-                if (zenithFound && !hasWon) {
-                    hasWon = true;
-                    showBanner('zenith');
-                } else {
-                    checkGameState();
-                }
-                saveGameState();
+                for (let x = 0; x < GRID_SIZE; x++) for (let z = 0; z < GRID_SIZE; z++) { let l =[]; for (let y = 0; y < GRID_SIZE; y++) l.push(grid[x][y][z]); let r = slideLine(l); ms += r.sg; for (let y = 0; y < GRID_SIZE; y++) { if (grid[x][y][z] !== r.nl[y]) ch = true; grid[x][y][z] = r.nl[y]; } score += r.sg; }
             } else {
-                history.pop();
-                if (history.length === 0) document.getElementById('undo-btn').disabled = true;
+                const m = getScreenMappedDirection(direction);
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    if (m.axis === 'x') { for (let z = 0; z < GRID_SIZE; z++) { let l =[]; for (let x = 0; x < GRID_SIZE; x++) l.push(grid[x][y][z]); if (m.dir === 1) l.reverse(); let r = slideLine(l); if (m.dir === 1) r.nl.reverse(); ms += r.sg; for (let x = 0; x < GRID_SIZE; x++) { if (grid[x][y][z] !== r.nl[x]) ch = true; grid[x][y][z] = r.nl[x]; } score += r.sg; } } 
+                    else { for (let x = 0; x < GRID_SIZE; x++) { let l =[]; for (let z = 0; z < GRID_SIZE; z++) l.push(grid[x][y][z]); if (m.dir === 1) l.reverse(); let r = slideLine(l); if (m.dir === 1) r.nl.reverse(); ms += r.sg; for (let z = 0; z < GRID_SIZE; z++) { if (grid[x][y][z] !== r.nl[z]) ch = true; grid[x][y][z] = r.nl[z]; } score += r.sg; } }
+                }
             }
+            if (ch) {
+                applyGravity(); moveCount++; levelStats.scoreEarned += ms; let dE = handleBombCycle(), cMV = Math.max(0, ...grid.flat(3).filter(b => b).map(b => b.value));
+                if (cMV >= 256 && highestTileAchieved < 256) showInfoBanner(); spawnBlock(cMV >= 256 ? 2 : 1); 
+                if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best_' + currentMode, best); } if (score > highestScoreThisGame) { addCoinsFromScore(score - highestScoreThisGame); highestScoreThisGame = score; }
+                sync(); checkObjectives();
+                let iM = false; if (cMV > highestTileAchieved && cMV >= 16) { highestTileAchieved = cMV; localStorage.setItem('cube2048_highest_tile', highestTileAchieved); showMilestone(highestTileAchieved); iM = true; }
+                if (!iM && !dE && ms > 0) playMergeSound();
+                if (grid.flat(3).some(b => b && b.value === 2048) && !hasWon) { hasWon = true; showBanner('zenith'); } else checkGameState(); saveGameState();
+            } else { history.pop(); if (history.length === 0 && document.getElementById('undo-btn')) document.getElementById('undo-btn').disabled = true; }
         }
 
-        function toggleGravity() {
-            if (isFlipping || isModalOpen) return;
-            
-            if (isDestroyMode) {
-                toggleDestroyMode(false);
-            }
-
-            saveHistory(); 
-
-            isFlipping = true;
-            flipProgress = 0;
-            gravityInverted = !gravityInverted;
-            document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-            updateButtonStates();
-            
-            levelStats.gravityUses++;
-            checkObjectives();
-        }
-
-        function saveHistory() {
-            const gridCopy = grid.map(layer => layer.map(row => row.map(cell => cell ? { ...cell } : null)));
-            history.push({ 
-                grid: gridCopy, 
-                score: score, 
-                moveCount: moveCount, 
-                iconFlipped: gravityInverted,
-                levelStats: JSON.parse(JSON.stringify(levelStats)),
-                objectives: JSON.parse(JSON.stringify(objectives)),
-                currentLevel: currentLevel,
-                highestTileAchieved: highestTileAchieved,
-                bombActive: bombActive,
-                bombTimer: bombTimer,
-                bombId: bombId,
-                bombSpawnMove: bombSpawnMove
-            });
-            if (history.length > 30) history.shift();
-            updateButtonStates();
-        }
-
+        function toggleGravity() { if (isFlipping || isModalOpen) return; if (isDestroyMode) toggleDestroyMode(false); saveHistory(); isFlipping = true; flipProgress = 0; gravityInverted = !gravityInverted; document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)'; updateButtonStates(); levelStats.gravityUses++; checkObjectives(); }
+        
+        function saveHistory() { history.push({ grid: grid.map(l => l.map(r => r.map(c => c ? { ...c } : null))), score, moveCount, iconFlipped: gravityInverted, levelStats: JSON.parse(JSON.stringify(levelStats)), objectives: JSON.parse(JSON.stringify(objectives)), currentLevel, highestTileAchieved, bombActive, bombTimer, bombId, bombSpawnMove }); if (history.length > 30) history.shift(); updateButtonStates(); }
+        
         function undoMove() {
             if (history.length === 0 || isFlipping || isModalOpen || totalCoins < 2 || currentMode === 'hard') return;
-            
-            if (isDestroyMode) {
-                toggleDestroyMode(false);
-            }
-
-            totalCoins -= 2;
-            localStorage.setItem('cube2048_coins', totalCoins);
-
-            const currentObjs = JSON.stringify(objectives);
-            const currentUndoUses = (levelStats.undoUses || 0) + 1;
-            const currentDestroyerUses = levelStats.destroyerUses || 0;
-
-            const last = history.pop();
-            grid = last.grid; 
-            score = last.score; 
-            moveCount = last.moveCount; 
-            gravityInverted = last.iconFlipped || false;
-            highestTileAchieved = last.highestTileAchieved || 8;
-            
-            bombActive = last.bombActive || false;
-            bombTimer = last.bombTimer || 0;
-            bombId = last.bombId || null;
-            bombSpawnMove = last.bombSpawnMove || -1;
-            updateBombUI();
-
-            levelStats = last.levelStats || { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
-            levelStats.undoUses = currentUndoUses;
-            levelStats.destroyerUses = currentDestroyerUses;
-            
-            objectives = JSON.parse(currentObjs);
-            currentLevel = last.currentLevel || 1;
-            selected = null;
-            
-            document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
-            
-            updateLevelUI();
-            updateCoinUI();
-            sync();
-            checkGameState();
-            saveGameState();
-            
-            checkObjectives();
+            if (isDestroyMode) toggleDestroyMode(false);
+            totalCoins -= 2; localStorage.setItem('cube2048_coins', totalCoins);
+            const cO = JSON.stringify(objectives), cU = (levelStats.undoUses || 0) + 1, cD = levelStats.destroyerUses || 0, l = history.pop();
+            grid = l.grid; score = l.score; moveCount = l.moveCount; gravityInverted = l.iconFlipped || false; highestTileAchieved = l.highestTileAchieved || 8; bombActive = l.bombActive || false; bombTimer = l.bombTimer || 0; bombId = l.bombId || null; bombSpawnMove = l.bombSpawnMove || -1; updateBombUI();
+            levelStats = l.levelStats || { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 }; levelStats.undoUses = cU; levelStats.destroyerUses = cD;
+            objectives = JSON.parse(cO); currentLevel = l.currentLevel || 1; selected = null; document.getElementById('gravity-icon').style.transform = gravityInverted ? 'rotate(180deg)' : 'rotate(0deg)';
+            updateLevelUI(); updateCoinUI(); sync(); checkGameState(); saveGameState(); checkObjectives();
         }
 
         function resetGame() {
-            if (isDestroyMode) {
-                toggleDestroyMode(false);
-            }
-
+            if (isDestroyMode) toggleDestroyMode(false);
             grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
-            for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
-                const r = Math.random(); 
-                grid[x][y][z] = { id: Math.random().toString(36).substr(2, 9), value: r > 0.9 ? 8 : r > 0.7 ? 4 : 2 };
-            }
-            score = 0; moveCount = 0; selected = null; history =[];
-            highestScoreThisGame = 0; 
-            highestTileAchieved = 8;
-            
-            bombActive = false; bombTimer = 0; bombId = null; bombSpawnMove = -1;
-            updateBombUI();
-
-            isFlipping = false;
-            flipProgress = 0;
-            if (cubeGroup) cubeGroup.rotation.z = 0;
-            gravityInverted = false;
-            hasWon = false;
-            
-            currentLevel = 1;
-            levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 };
-            objectives = generateObjectives(1);
-            
-            document.getElementById('gravity-icon').style.transform = 'rotate(0deg)';
-            document.getElementById('obj-btn').classList.remove('alert');
-            
-            updateLevelUI();
-            updateCoinUI();
-            hideBanner();
-            applyGravity(); 
-            sync();
-            saveGameState();
-            
-            openObjectives();
+            for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) grid[x][y][z] = { id: Math.random().toString(36).substr(2, 9), value: Math.random() > 0.9 ? 8 : Math.random() > 0.7 ? 4 : 2 };
+            score = 0; moveCount = 0; selected = null; history =[]; highestScoreThisGame = 0; highestTileAchieved = 8;
+            bombActive = false; bombTimer = 0; bombId = null; bombSpawnMove = -1; updateBombUI();
+            isFlipping = false; flipProgress = 0; if (cubeGroup) cubeGroup.rotation.z = 0; gravityInverted = false; hasWon = false;
+            currentLevel = 1; levelStats = { gravityUses: 0, scoreEarned: 0, undoUses: 0, destroyerUses: 0 }; objectives = generateObjectives(1);
+            document.getElementById('gravity-icon').style.transform = 'rotate(0deg)'; document.getElementById('obj-btn').classList.remove('alert');
+            updateLevelUI(); updateCoinUI(); hideBanner(); applyGravity(); sync(); saveGameState(); openObjectives();
         }
 
         function sync() {
-            const off = (GRID_SIZE - 1) / 2, ids = new Set();
+            const o = (GRID_SIZE - 1) / 2, is = new Set();
             for (let x = 0; x < GRID_SIZE; x++) for (let y = 0; y < GRID_SIZE; y++) for (let z = 0; z < GRID_SIZE; z++) {
-                const b = grid[x][y][z]; 
-                if (!b) continue; 
-                ids.add(b.id);
-                let m = blockMeshes.get(b.id);
-                
-                if (!m) {
-                    const materials =[];
-                    const tex = createTex(b.value);
-                    for (let i = 0; i < 6; i++) {
-                        materials.push(new THREE.MeshStandardMaterial({ map: tex, metalness: 0.1, roughness: 0.2 }));
-                    }
-                    m = new THREE.Mesh(blockGeometry, materials);
-                    m.castShadow = true; m.receiveShadow = true; 
-                    cubeGroup.add(m); blockMeshes.set(b.id, m);
-                    
-                    const startY = b.isNew ? 12 : (y - off) * SPACING;
-                    m.position.set((x - off) * SPACING, startY, (z - off) * SPACING);
-                    if (b.isNew) delete b.isNew;
-                }
-                
-                m.userData.target = new THREE.Vector3((x - off) * SPACING, (y - off) * SPACING, (z - off) * SPACING);
-                m.userData.pos =[x, y, z];
-                const sel = selected && selected[0] === x && selected[1] === y && selected[2] === z;
-                
-                m.scale.setScalar(sel ? 1.15 : 1);
-                
-                const isBombBlock = (bombActive && b.id === bombId);
-                m.userData.isBomb = isBombBlock;
-
-                if (!isBombBlock && m.userData.wasBomb) {
-                    m.userData.wasBomb = false;
-                    m.material.forEach((mat) => {
-                        mat.emissive.setHex(0x000000);
-                    });
-                }
-                if (isBombBlock) m.userData.wasBomb = true;
-
-                if (Array.isArray(m.material)) {
-                    m.material.forEach((mat) => {
-                        if (!isBombBlock) mat.emissive.setHex(sel ? 0x444444 : 0x000000);
-                        if (m.userData.val !== b.value) {
-                            mat.map = createTex(b.value);
-                            mat.needsUpdate = true;
-                        }
-                    });
-                }
-                m.userData.val = b.value;
+                const b = grid[x][y][z]; if (!b) continue; is.add(b.id); let m = blockMeshes.get(b.id);
+                if (!m) { const mt =[]; const t = createTex(b.value); for (let i = 0; i < 6; i++) mt.push(new THREE.MeshStandardMaterial({ map: t, metalness: 0.1, roughness: 0.2 })); m = new THREE.Mesh(blockGeometry, mt); m.castShadow = true; m.receiveShadow = true; cubeGroup.add(m); blockMeshes.set(b.id, m); m.position.set((x - o) * SPACING, b.isNew ? 12 : (y - o) * SPACING, (z - o) * SPACING); if (b.isNew) delete b.isNew; }
+                m.userData.target = new THREE.Vector3((x - o) * SPACING, (y - o) * SPACING, (z - o) * SPACING); m.userData.pos =[x, y, z]; const sl = selected && selected[0] === x && selected[1] === y && selected[2] === z; m.scale.setScalar(sl ? 1.15 : 1);
+                const ib = (bombActive && b.id === bombId); m.userData.isBomb = ib; if (!ib && m.userData.wasBomb) { m.userData.wasBomb = false; m.material.forEach(mat => mat.emissive.setHex(0x000000)); } if (ib) m.userData.wasBomb = true;
+                if (Array.isArray(m.material)) m.material.forEach(mat => { if (!ib) mat.emissive.setHex(sl ? 0x444444 : 0x000000); if (m.userData.val !== b.value) { mat.map = createTex(b.value); mat.needsUpdate = true; } }); m.userData.val = b.value;
             }
-            
-            for (const [id, m] of blockMeshes.entries()) {
-                if (!ids.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); }
-            }
-            document.getElementById('score').innerText = score;
-            document.getElementById('best').innerText = best;
+            for (const [id, m] of blockMeshes.entries()) if (!is.has(id)) { cubeGroup.remove(m); blockMeshes.delete(id); } document.getElementById('score').innerText = score; document.getElementById('best').innerText = best;
         }
 
-        function applyGravity() {
-            const ng = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
-            for (let x = 0; x < GRID_SIZE; x++) {
-                for (let z = 0; z < GRID_SIZE; z++) {
-                    let ny = 0; 
-                    for (let y = 0; y < GRID_SIZE; y++) {
-                        if (grid[x][y][z]) {
-                            ng[x][ny][z] = grid[x][y][z];
-                            ny++;
-                        }
-                    }
-                }
-            }
-            grid = ng;
-        }
+        function applyGravity() { const ng = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null))); for (let x = 0; x < GRID_SIZE; x++) for (let z = 0; z < GRID_SIZE; z++) { let ny = 0; for (let y = 0; y < GRID_SIZE; y++) if (grid[x][y][z]) { ng[x][ny][z] = grid[x][y][z]; ny++; } } grid = ng; }
 
-        function spawnBlock() {
-            let currentMaxVal = 0;
-            for (let x = 0; x < GRID_SIZE; x++) {
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    for (let z = 0; z < GRID_SIZE; z++) {
-                        if (grid[x][y][z]) currentMaxVal = Math.max(currentMaxVal, grid[x][y][z].value);
-                    }
-                }
-            }
-            const count = currentMaxVal >= 256 ? 2 : 1;
-            
-            let spawnedBomb = false;
-
-            for(let c = 0; c < count; c++) {
-                const validColumns =[];
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    for (let z = 0; z < GRID_SIZE; z++) {
-                        if (!grid[x][GRID_SIZE - 1][z]) { 
-                            validColumns.push({ x, z });
-                        }
-                    }
-                }
-
-                if (validColumns.length > 0) {
-                    const spot = validColumns[Math.floor(Math.random() * validColumns.length)];
-                    const r = Math.random();
-                    const val = r > 0.9 ? 8 : r > 0.7 ? 4 : 2;
-                    
-                    let isBomb = false;
-                    if (moveCount > 0 && moveCount % 20 === 0 && !bombActive && !spawnedBomb) {
-                        isBomb = true;
-                        spawnedBomb = true;
-                    }
-
-                    let newId = Math.random().toString(36).substr(2, 9);
-                    grid[spot.x][GRID_SIZE - 1][spot.z] = { 
-                        id: newId, 
-                        value: val,
-                        isNew: true,
-                        isBomb: isBomb
-                    };
-
-                    if (isBomb) {
-                        bombActive = true;
-                        bombTimer = 3;
-                        bombId = newId;
-                        bombSpawnMove = moveCount;
-                        updateBombUI();
-                    }
-
-                    applyGravity();
+        function spawnBlock(c = 1) {
+            let sB = false;
+            for(let i = 0; i < c; i++) {
+                const vC =[]; for (let x = 0; x < GRID_SIZE; x++) for (let z = 0; z < GRID_SIZE; z++) if (!grid[x][GRID_SIZE - 1][z]) vC.push({ x, z });
+                if (vC.length > 0) {
+                    const s = vC[Math.floor(Math.random() * vC.length)], r = Math.random(), v = r > 0.9 ? 8 : r > 0.7 ? 4 : 2;
+                    let ib = false; if (moveCount > 0 && moveCount % 20 === 0 && !bombActive && !sB) { ib = true; sB = true; }
+                    let nI = Math.random().toString(36).substr(2, 9); grid[s.x][GRID_SIZE - 1][s.z] = { id: nI, value: v, isNew: true, isBomb: ib };
+                    if (ib) { bombActive = true; bombTimer = 3; bombId = nI; bombSpawnMove = moveCount; updateBombUI(); } applyGravity();
                 }
             }
         }
 
-        function click(pos) {
+        function click(p) {
             if (isFlipping || isModalOpen) return;
-            
-            // Handle Destroy Mode
             if (isDestroyMode) {
-                if (grid[pos[0]][pos[1]][pos[2]]) {
-                    if (totalCoins < 2) return;
-
-                    saveHistory(); 
-                    
-                    let valToDestroy = grid[pos[0]][pos[1]][pos[2]].value;
-                    let targetId = grid[pos[0]][pos[1]][pos[2]].id;
-                    levelStats.destroyerUses = (levelStats.destroyerUses || 0) + 1;
-
-                    totalCoins -= 2;
-                    localStorage.setItem('cube2048_coins', totalCoins);
-                    updateCoinUI();
-                    
-                    createExplosion(pos[0], pos[1], pos[2], valToDestroy);
-                    playExplosionSound();
-                    
-                    grid[pos[0]][pos[1]][pos[2]] = null;
-
-                    if (bombActive && targetId === bombId) {
-                        bombActive = false;
-                        bombId = null;
-                        showToast("Bomb Destroyed!", "✅");
-                        updateBombUI();
-                    }
-                    
-                    toggleDestroyMode(false);
-                    
-                    applyGravity();
-                    moveCount++;
-                    
-                    handleBombCycle();
-
-                    spawnBlock();
-                    
-                    sync();
-                    checkObjectives(); 
-                    checkGameState();
-                    saveGameState();
-                }
-                return;
+                if (grid[p[0]][p[1]][p[2]]) {
+                    if (totalCoins < 2) return; saveHistory(); 
+                    let vD = grid[p[0]][p[1]][p[2]].value, tI = grid[p[0]][p[1]][p[2]].id; levelStats.destroyerUses = (levelStats.destroyerUses || 0) + 1;
+                    totalCoins -= 2; localStorage.setItem('cube2048_coins', totalCoins); updateCoinUI();
+                    createExplosion(p[0], p[1], p[2], vD); playExplosionSound(); grid[p[0]][p[1]][p[2]] = null;
+                    if (bombActive && tI === bombId) { bombActive = false; bombId = null; showToast("Bomb Destroyed!", "✅"); updateBombUI(); }
+                    toggleDestroyMode(false); applyGravity(); moveCount++; let dE = handleBombCycle(), cMV = Math.max(0, ...grid.flat(3).filter(b => b).map(b => b.value)); spawnBlock(cMV >= 256 ? 2 : 1);
+                    sync(); checkObjectives(); checkGameState(); saveGameState();
+                } return;
             }
-
             if (currentMode !== 'easy') return;
-
-            if (!selected) { selected = pos; }
-            else if (selected[0] === pos[0] && selected[1] === pos[1] && selected[2] === pos[2]) { selected = null; }
+            if (!selected) selected = p; else if (selected[0] === p[0] && selected[1] === p[1] && selected[2] === p[2]) selected = null;
             else {
-                const b1 = grid[selected[0]][selected[1]][selected[2]], b2 = grid[pos[0]][pos[1]][pos[2]];
-                const d = Math.abs(selected[0] - pos[0]) + Math.abs(selected[1] - pos[1]) + Math.abs(selected[2] - pos[2]);
-                
+                const b1 = grid[selected[0]][selected[1]][selected[2]], b2 = grid[p[0]][p[1]][p[2]]; const d = Math.abs(selected[0] - p[0]) + Math.abs(selected[1] - p[1]) + Math.abs(selected[2] - p[2]);
                 if (b1 && b2 && b1.value === b2.value && d === 1) { 
-                    saveHistory();
-                    const v = b1.value * 2; 
-                    score += b1.value; 
-                    levelStats.scoreEarned += b1.value;
-                    
-                    if (bombActive && (b1.id === bombId || b2.id === bombId)) {
-                        bombActive = false;
-                        bombId = null;
-                        showToast("Bomb Defused!", "✅");
-                        updateBombUI();
-                    }
-
-                    moveCount++;
-                    if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best_' + currentMode, best); }
-                    
-                    if (score > highestScoreThisGame) {
-                        addCoinsFromScore(score - highestScoreThisGame);
-                        highestScoreThisGame = score;
-                    }
-
-                    grid[selected[0]][selected[1]][selected[2]] = null; 
-                    grid[pos[0]][pos[1]][pos[2]] = { id: b2.id, value: v };
-                    
-                    applyGravity();
-                    handleBombCycle();
-                    spawnBlock(); 
-                    selected = null;
-
-                    let moveMaxVal = 0;
-                    for (let x = 0; x < GRID_SIZE; x++) {
-                        for (let y = 0; y < GRID_SIZE; y++) {
-                            for (let z = 0; z < GRID_SIZE; z++) {
-                                if (grid[x][y][z]) moveMaxVal = Math.max(moveMaxVal, grid[x][y][z].value);
-                            }
-                        }
-                    }
-
-                    if (currentMaxVal >= 256 && highestTileAchieved < 256) {
-                        showWarningBanner();
-                    }
-
-                    let isMilestone = false;
-                    if (moveMaxVal > highestTileAchieved && moveMaxVal >= 16) {
-                        highestTileAchieved = moveMaxVal;
-                        localStorage.setItem('cube2048_highest_tile', highestTileAchieved);
-                        showMilestone(highestTileAchieved);
-                        isMilestone = true;
-                    }
-                    
-                    if (!isMilestone) playMergeSound();
-
-                    checkObjectives();
-
-                    if (v === 2048 && !hasWon) {
-                        hasWon = true;
-                        showBanner('zenith');
-                    } else {
-                        checkGameState();
-                    }
-                } else { selected = pos; }
-            }
-            sync();
-            saveGameState();
+                    saveHistory(); const v = b1.value * 2; score += b1.value; levelStats.scoreEarned += b1.value;
+                    if (bombActive && (b1.id === bombId || b2.id === bombId)) { bombActive = false; bombId = null; showToast("Bomb Defused!", "✅"); updateBombUI(); }
+                    moveCount++; if (score > best) { best = score; localStorage.setItem('cube2048_3x3_best_' + currentMode, best); } if (score > highestScoreThisGame) { addCoinsFromScore(score - highestScoreThisGame); highestScoreThisGame = score; }
+                    grid[selected[0]][selected[1]][selected[2]] = null; grid[p[0]][p[1]][p[2]] = { id: b2.id, value: v };
+                    applyGravity(); let dE = handleBombCycle(), cMV = Math.max(0, ...grid.flat(3).filter(b => b).map(b => b.value));
+                    if (cMV >= 256 && highestTileAchieved < 256) showInfoBanner(); spawnBlock(cMV >= 256 ? 2 : 1); selected = null;
+                    let iM = false; if (cMV > highestTileAchieved && cMV >= 16) { highestTileAchieved = cMV; localStorage.setItem('cube2048_highest_tile', highestTileAchieved); showMilestone(highestTileAchieved); iM = true; }
+                    if (!iM && !dE) playMergeSound(); checkObjectives(); if (v === 2048 && !hasWon) { hasWon = true; showBanner('zenith'); } else checkGameState();
+                } else selected = p;
+            } sync(); saveGameState();
         }
+
+        // Setup Android Ad Check
+        function isAndroid() { return /Android/i.test(navigator.userAgent); }
 
         function initApp() {
+            if(isAndroid()) {
+                document.getElementById('android-ad-ui').style.display = 'flex';
+                document.getElementById('game-wrapper').style.display = 'none';
+                return;
+            }
             checkForUpdate().then((ok) => {
                 if (ok) {
                     try {
@@ -2369,7 +1082,6 @@
                 }
             });
         }
-
         window.onload = initApp;
     </script>
 </body>
